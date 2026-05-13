@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#077DB7">
+<title>Dealer Buddy | carsale24</title>
+<style>
+:root{--blue:#077DB7;--blue-dk:#065f8a;--blue-lt:#e8f4fa;--green:#0FA23A;--green-dk:#0c822e;--green-lt:#e6f7eb;--bg:#f5f7fa;--white:#fff;--card:#fff;--text:#1a2332;--text-sec:#5a6577;--muted:#8e99a8;--border:#e2e7ef;--border-lt:#f0f2f5;--red:#e53e3e;--red-lt:#fef2f2;--orange:#f6993f;--shadow:0 1px 3px rgba(0,0,0,.06);--shadow-md:0 4px 12px rgba(0,0,0,.08);--r:12px;--rl:16px;--rf:9999px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);max-width:430px;margin:0 auto;min-height:100vh;position:relative;overflow-x:hidden}
+.status-bar{height:env(safe-area-inset-top,44px);min-height:44px;background:var(--white)}
+.nav-bar{background:var(--white);padding:8px 20px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;flex-direction:column}
+.nav-logo-mark{font-size:22px;font-weight:800;letter-spacing:-.5px}.nav-logo-mark .b{color:var(--blue)}.nav-logo-mark .g{color:var(--green)}
+.nav-divider{width:28px;height:2px;background:var(--border);border-radius:1px;margin:4px 0}
+.nav-app-name{font-size:13px;font-weight:600;letter-spacing:-.2px;color:var(--text)}
+.nav-right{display:flex;align-items:center;gap:8px}
+.lang-pill{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.lang-pill button{padding:3px 8px;font-size:10px;font-weight:600;border:none;cursor:pointer;background:var(--white);color:var(--muted);font-family:inherit}
+.lang-pill button.active{background:var(--blue);color:#fff}
+.badge{background:var(--red);color:#fff;font-size:10px;font-weight:700;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.content{padding:16px 20px;padding-bottom:90px;min-height:calc(100vh - 130px)}
+.greeting-hello{font-size:13px;color:var(--muted)}
+.greeting-name{font-size:20px;font-weight:800;letter-spacing:-.5px}
+.greeting-sub{font-size:12px;color:var(--text-sec);margin-top:2px}
+.stats-row{display:flex;gap:8px;margin:16px 0}
+.stat-card{flex:1;background:var(--white);border-radius:var(--r);padding:12px;box-shadow:var(--shadow)}
+.stat-num{font-size:22px;font-weight:800;color:var(--blue)}.stat-num.gr{color:var(--green)}.stat-num.or{color:var(--orange)}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:1px}
+.sec-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.sec-title{font-size:15px;font-weight:700}.sec-link{font-size:11px;font-weight:600;color:var(--blue)}
+.v-card{background:var(--white);border-radius:var(--rl);box-shadow:var(--shadow);overflow:hidden;margin-bottom:12px}
+.v-img{height:140px;background:linear-gradient(135deg,var(--blue-lt),#d4e8f5);display:flex;align-items:center;justify-content:center;position:relative}
+.v-img svg{width:60px;height:60px;opacity:.2;fill:var(--blue)}
+.match-badge{position:absolute;top:10px;left:10px;background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:var(--rf)}
+.price-badge{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.7);color:#fff;font-size:12px;font-weight:700;padding:3px 8px;border-radius:var(--rf)}
+.v-info{padding:12px 14px}
+.v-title{font-size:14px;font-weight:700}
+.v-specs{display:flex;gap:10px;font-size:11px;color:var(--text-sec);margin:6px 0;flex-wrap:wrap}
+.v-spec{display:flex;align-items:center;gap:3px}.v-spec svg{width:12px;height:12px;fill:var(--muted)}
+.v-meta{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.meta-tag{background:var(--blue-lt);color:var(--blue);font-size:9px;font-weight:600;padding:2px 7px;border-radius:var(--rf)}
+.meta-tag.match{background:var(--green-lt);color:var(--green)}
+.v-actions{display:flex;gap:6px}
+.btn{flex:1;padding:10px;border-radius:var(--r);font-size:12px;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:.15s;font-family:inherit}
+.btn svg{width:15px;height:15px}
+.btn-green{background:var(--green);color:#fff}.btn-green:active{background:var(--green-dk)}.btn-green svg{fill:#fff}
+.btn-gray{background:var(--border-lt);color:var(--text-sec)}.btn-gray:active{background:var(--border)}.btn-gray svg{fill:var(--text-sec)}
+.tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:70px;background:var(--white);border-top:1px solid var(--border);display:flex;padding:6px 10px 16px;z-index:50}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--muted);font-size:9px;font-weight:500;cursor:pointer;transition:.15s}
+.tab-item.active{color:var(--blue)}.tab-item svg{width:20px;height:20px}.tab-item.active svg{fill:var(--blue)}.tab-item:not(.active) svg{fill:var(--muted)}
+/* Feedback screen */
+.back-bar{background:var(--white);padding:8px 20px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);cursor:pointer}
+.back-bar svg{width:18px;height:18px;fill:var(--blue)}.back-title{font-size:13px;font-weight:600}
+.fb-header{text-align:center;padding:16px 0}
+.fb-icon{width:48px;height:48px;background:var(--blue-lt);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px}.fb-icon svg{width:24px;height:24px;fill:var(--blue)}
+.fb-title{font-size:16px;font-weight:700}.fb-sub{font-size:12px;color:var(--text-sec)}
+.fb-section{font-size:12px;font-weight:700;margin:14px 0 8px}
+.fb-option{background:var(--white);border:2px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:.15s;font-size:12px}
+.fb-option.selected{border-color:var(--blue);background:var(--blue-lt)}
+.fb-radio{width:18px;height:18px;border:2px solid var(--border);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.fb-option.selected .fb-radio{border-color:var(--blue)}.fb-option.selected .fb-radio::after{content:'';width:9px;height:9px;background:var(--blue);border-radius:50%}
+.fb-divider{height:1px;background:var(--border);margin:14px 0}
+.fb-or{text-align:center;font-size:11px;color:var(--muted);font-weight:600;margin:12px 0}
+.input-group{margin-bottom:10px}
+.input-lbl{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+.input-field{width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:12px;color:var(--text);font-family:inherit;outline:none}
+.input-field:focus{border-color:var(--blue)}
+.input-hint{font-size:10px;color:var(--muted);margin-top:2px}
+.pref-box{background:var(--white);border:2px solid var(--border);border-radius:var(--r);padding:14px}
+.pref-title{font-size:11px;font-weight:700;margin-bottom:8px}
+.pref-row{display:flex;gap:6px;margin-bottom:6px}
+.pref-field{flex:1}
+.pref-select{width:100%;border:1px solid var(--border);border-radius:8px;padding:7px 24px 7px 9px;font-size:11px;color:var(--text);font-family:inherit;outline:none;appearance:none;background:var(--bg) url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238e99a8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") no-repeat right 8px center}
+.btn-submit{width:100%;padding:12px;border-radius:var(--r);font-size:13px;font-weight:700;border:none;cursor:pointer;background:var(--blue);color:#fff;margin-top:14px;font-family:inherit}
+.btn-submit:active{background:var(--blue-dk)}
+/* Profile */
+.prof-card{background:var(--white);border-radius:var(--rl);padding:18px;text-align:center;box-shadow:var(--shadow);margin-bottom:14px}
+.prof-avatar{width:56px;height:56px;background:linear-gradient(135deg,var(--blue),var(--green));border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff}
+.prof-name{font-size:16px;font-weight:700}.prof-company{font-size:12px;color:var(--text-sec)}
+.prof-stats{display:flex;gap:1px;margin-top:14px;background:var(--border);border-radius:8px;overflow:hidden}
+.prof-stat{flex:1;background:var(--bg);padding:8px;text-align:center}
+.prof-stat-num{font-size:16px;font-weight:800;color:var(--blue)}.prof-stat-lbl{font-size:9px;color:var(--muted);margin-top:1px}
+.pref-card{background:var(--white);border-radius:var(--rl);box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px}
+.pref-card-title{font-size:12px;font-weight:700;padding:14px 14px 0}
+.pref-item{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-top:1px solid var(--border-lt)}
+.pref-item-lbl{font-size:12px}.pref-item-val{font-size:12px;color:var(--muted);font-weight:500}
+.pref-item-val.tag{background:var(--blue-lt);color:var(--blue);padding:2px 7px;border-radius:var(--rf);font-size:10px;font-weight:600}
+.toggle{width:40px;height:22px;background:var(--green);border-radius:11px;position:relative;cursor:pointer}
+.toggle::after{content:'';position:absolute;top:2px;right:2px;width:18px;height:18px;background:#fff;border-radius:50%;box-shadow:var(--shadow)}
+.toast{position:fixed;top:50px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;z-index:100;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+/* Compact list */
+.v-list-item{background:var(--white);border-radius:var(--r);padding:12px;margin-bottom:8px;box-shadow:var(--shadow);display:flex;gap:10px;align-items:center}
+.v-thumb{width:64px;height:48px;background:linear-gradient(135deg,var(--blue-lt),#d4e8f5);border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.v-thumb svg{width:24px;height:24px;opacity:.2;fill:var(--blue)}
+.v-list-info{flex:1;min-width:0}
+.v-list-title{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v-list-detail{font-size:10px;color:var(--text-sec);margin-top:1px}
+.v-list-price{font-size:13px;font-weight:800;color:var(--blue);margin-top:2px}
+.v-list-match{font-size:9px;font-weight:700;color:var(--green);background:var(--green-lt);padding:1px 5px;border-radius:var(--rf);display:inline-block;margin-top:2px}
+.v-list-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.btn-icon{width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.btn-icon svg{width:16px;height:16px}
+.btn-icon.gr{background:var(--green-lt)}.btn-icon.gr svg{fill:var(--green)}
+.btn-icon.gy{background:var(--border-lt)}.btn-icon.gy svg{fill:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+<div class="status-bar"></div>
+<div id="navArea"></div>
+<div id="content" class="content"></div>
+<div class="tab-bar" id="tabBar"></div>
+
+<script>
+const API = '';
+let lang = 'de';
+let i18n = {};
+let dealerId = 'D001';
+let currentTab = 'home';
+let feedbackVehicle = null;
+
+const CAR_SVG = '<svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>';
+const MAIL_SVG = '<svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>';
+const X_SVG = '<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+
+function T(key, params={}) {
+  const keys = key.split('.');
+  let val = i18n;
+  for (const k of keys) val = val?.[k];
+  if (typeof val !== 'string') return key.split('.').pop();
+  return val.replace(/\{(\w+)\}/g, (_, p) => params[p] ?? `{${p}}`);
+}
+
+function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+
+async function setLang(l) {
+  lang = l;
+  document.querySelectorAll('.lang-pill button').forEach(b => b.classList.toggle('active', b.textContent.trim() === l.toUpperCase()));
+  const r = await fetch(`/api/i18n/${l}`);
+  i18n = await r.json();
+  renderTab(currentTab);
+}
+
+function renderNav(showBack, backTitle, backFn) {
+  if (showBack) {
+    document.getElementById('navArea').innerHTML = `<div class="back-bar" onclick="${backFn}"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg><div class="back-title">${backTitle}</div></div>`;
+  } else {
+    document.getElementById('navArea').innerHTML = `<div class="nav-bar"><div class="nav-logo"><div class="nav-logo-mark"><span class="b">carsale</span><span class="g">24</span></div><div class="nav-divider"></div><div class="nav-app-name">Dealer Buddy</div></div>
+    <div class="nav-right"><div class="lang-pill"><button class="${lang==='en'?'active':''}" onclick="setLang('en')">EN</button><button class="${lang==='de'?'active':''}" onclick="setLang('de')">DE</button></div></div></div>`;
+  }
+}
+
+function renderTabs() {
+  const tabs = [
+    { id: 'home', icon: '<svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>', label: T('tabs.home') },
+    { id: 'vehicles', icon: CAR_SVG, label: T('tabs.vehicles') },
+    { id: 'notifications', icon: '<svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>', label: T('tabs.notifications') },
+    { id: 'profile', icon: '<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>', label: T('tabs.profile') },
+  ];
+  document.getElementById('tabBar').innerHTML = tabs.map(t =>
+    `<div class="tab-item ${currentTab===t.id?'active':''}" onclick="renderTab('${t.id}')">${t.icon}<span>${t.label}</span></div>`
+  ).join('');
+}
+
+function renderTab(tab) {
+  currentTab = tab;
+  feedbackVehicle = null;
+  renderNav(false);
+  renderTabs();
+  const fns = { home: renderHome, vehicles: renderVehicles, notifications: renderVehicles, profile: renderProfile };
+  (fns[tab] || renderHome)();
+}
+
+// =============================================
+// HOME
+// =============================================
+async function renderHome() {
+  const data = await (await fetch(`/api/dealers/${dealerId}/matches?lang=${lang}`)).json();
+  const c = document.getElementById('content');
+  let h = `<div style="margin-bottom:16px"><div class="greeting-hello">${data.greeting}</div><div class="greeting-name">${data.companyName}</div><div class="greeting-sub">${data.matchesLabel}</div></div>`;
+
+  h += `<div class="stats-row">
+    <div class="stat-card"><div class="stat-num">${data.stats.newMatches.value}</div><div class="stat-lbl">${data.stats.newMatches.label}</div></div>
+    <div class="stat-card"><div class="stat-num gr">${data.stats.contacted.value}</div><div class="stat-lbl">${data.stats.contacted.label}</div></div>
+    <div class="stat-card"><div class="stat-num or">${data.stats.open.value}</div><div class="stat-lbl">${data.stats.open.label}</div></div>
+  </div>`;
+
+  h += `<div class="sec-hdr"><div class="sec-title">${data.sectionTitle}</div><div class="sec-link">${T('sections.all')}</div></div>`;
+
+  for (const m of data.matches.slice(0, 5)) {
+    const colors = ['#d4e8f5','#c8ecd2','#d4e8f5','#fde8c8','#e8d4f5'];
+    const bgIdx = data.matches.indexOf(m) % colors.length;
+    h += `<div class="v-card">
+      <div class="v-img" style="background:linear-gradient(135deg,var(--blue-lt),${colors[bgIdx]})">
+        ${CAR_SVG}
+        <div class="match-badge">${m.matchBadge}</div>
+        <div class="price-badge">€ ${m.price?.toLocaleString('de-DE')}</div>
+      </div>
+      <div class="v-info">
+        <div class="v-title">${m.title}</div>
+        <div class="v-specs">
+          <div class="v-spec"><svg viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>${m.year||''}</div>
+          <div class="v-spec"><svg viewBox="0 0 24 24"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27z"/></svg>${m.mileageKm?.toLocaleString('de-DE')||'—'} km</div>
+          <div class="v-spec"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>${m.location||''}</div>
+        </div>
+        <div class="v-meta">
+          ${m.inPriceRange ? `<span class="meta-tag match">${data.labels.priceRange}</span>` : ''}
+          <span class="meta-tag">${m.bodyType}</span>
+          <span class="meta-tag">${m.fuelType||''}</span>
+        </div>
+        <div class="v-actions">
+          <button class="btn btn-green" onclick="doAction('${m.vehicleId}','contact')">${MAIL_SVG} ${data.actions.getInTouch}</button>
+          <button class="btn btn-gray" onclick="showFeedback('${m.vehicleId}','${m.title.replace(/'/g,"\\'")}')">${X_SVG} ${T('actions.notInterested')}</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  c.innerHTML = h;
+}
+
+// =============================================
+// VEHICLES (compact list)
+// =============================================
+async function renderVehicles() {
+  const data = await (await fetch(`/api/dealers/${dealerId}/matches?lang=${lang}`)).json();
+  const c = document.getElementById('content');
+  let h = `<div style="background:linear-gradient(135deg,var(--blue),#0a9ed4);margin:-16px -20px 14px;padding:20px;color:#fff;border-radius:0 0 16px 16px">
+    <div style="font-size:11px;opacity:.7">${new Date().toLocaleDateString(lang==='de'?'de-DE':'en-US',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+    <div style="font-size:18px;font-weight:800;margin:2px 0">${T('sections.todayRecommendations')}</div>
+    <div style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.2);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-top:6px">${CAR_SVG.replace('viewBox','style="width:14px;height:14px;fill:#fff" viewBox')} ${data.matches.length} ${T('admin.vehicles')}</div>
+  </div>`;
+
+  for (const m of data.matches) {
+    h += `<div class="v-list-item">
+      <div class="v-thumb">${CAR_SVG}</div>
+      <div class="v-list-info">
+        <div class="v-list-title">${m.title}</div>
+        <div class="v-list-detail">${m.year||''} · ${m.mileageKm?.toLocaleString('de-DE')||'—'} km · ${m.location||''}</div>
+        <div class="v-list-price">€ ${m.price?.toLocaleString('de-DE')}</div>
+        <div class="v-list-match">${m.matchBadge}</div>
+      </div>
+      <div class="v-list-actions">
+        <button class="btn-icon gr" onclick="doAction('${m.vehicleId}','contact')" title="${T('actions.getInTouch')}">${MAIL_SVG}</button>
+        <button class="btn-icon gy" onclick="showFeedback('${m.vehicleId}','${m.title.replace(/'/g,"\\'")}')" title="${T('actions.notInterested')}">${X_SVG}</button>
+      </div>
+    </div>`;
+  }
+  c.innerHTML = h;
+}
+
+// =============================================
+// FEEDBACK
+// =============================================
+function showFeedback(vehicleId, vehicleTitle) {
+  feedbackVehicle = { id: vehicleId, title: vehicleTitle };
+  renderNav(true, vehicleTitle, `renderTab('${currentTab}')`);
+  document.getElementById('tabBar').innerHTML = '';
+
+  const reasons = [
+    { key: 'price_too_high', label: T('feedback.reasons.priceTooHigh') },
+    { key: 'wrong_type', label: T('feedback.reasons.wrongType') },
+    { key: 'too_high_mileage', label: T('feedback.reasons.tooHighMileage') },
+    { key: 'wrong_brand', label: T('feedback.reasons.wrongBrandModel') },
+    { key: 'too_far', label: T('feedback.reasons.tooFarAway') },
+  ];
+
+  let h = `<div class="fb-header"><div class="fb-icon"><svg viewBox="0 0 24 24"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg></div>
+  <div class="fb-title">${T('feedback.title')}</div><div class="fb-sub">${T('feedback.subtitle')}</div></div>`;
+
+  h += `<div class="fb-section">${T('feedback.whyNot')}</div>`;
+  for (const r of reasons) {
+    h += `<div class="fb-option" onclick="selectReason(this,'${r.key}')"><div class="fb-radio"></div><div>${r.label}</div></div>`;
+  }
+
+  h += `<div class="fb-divider"></div><div class="fb-section">${T('feedback.pasteLink')}</div>
+  <div class="input-group"><div class="input-lbl">${T('feedback.pasteLinkLabel')}</div>
+  <input type="text" class="input-field" id="extLink" placeholder="${T('feedback.pasteLinkPlaceholder')}">
+  <div class="input-hint">${T('feedback.pasteLinkHint')}</div></div>`;
+
+  h += `<div class="fb-or">${T('feedback.or')}</div>`;
+
+  h += `<div class="pref-box"><div class="pref-title">${T('feedback.searchPrefs')}</div>
+    <div class="pref-row"><div class="pref-field"><div class="input-lbl">${T('fields.make')}</div><select class="pref-select" id="spMake"><option>${T('fields.allMakes')}</option><option>Audi</option><option>BMW</option><option>Mercedes-Benz</option><option>VW</option><option>Opel</option><option>Porsche</option><option>Skoda</option></select></div>
+    <div class="pref-field"><div class="input-lbl">${T('fields.model')}</div><select class="pref-select" id="spModel"><option>${T('fields.allModels')}</option></select></div></div>
+    <div class="pref-row"><div class="pref-field"><div class="input-lbl">${T('fields.type')}</div><select class="pref-select" id="spType"><option>${T('fields.allTypes')}</option><option>${T('vehicleTypes.kombi')}</option><option>${T('vehicleTypes.limousine')}</option><option>${T('vehicleTypes.suv')}</option><option>${T('vehicleTypes.cabrio')}</option><option>${T('vehicleTypes.kleinwagen')}</option></select></div>
+    <div class="pref-field"><div class="input-lbl">${T('fields.fuel')}</div><select class="pref-select" id="spFuel"><option>${T('fields.allFuels')}</option><option>${T('fuelTypes.diesel')}</option><option>${T('fuelTypes.benzin')}</option><option>${T('fuelTypes.elektro')}</option><option>${T('fuelTypes.hybrid')}</option></select></div></div>
+    <div class="pref-row"><div class="pref-field"><div class="input-lbl">${T('fields.priceFrom')}</div><select class="pref-select" id="spPriceMin"><option>${T('fields.min')}</option><option value="5000">€ 5.000</option><option value="10000">€ 10.000</option><option value="15000">€ 15.000</option><option value="20000">€ 20.000</option></select></div>
+    <div class="pref-field"><div class="input-lbl">${T('fields.priceTo')}</div><select class="pref-select" id="spPriceMax"><option>${T('fields.max')}</option><option value="15000">€ 15.000</option><option value="20000">€ 20.000</option><option value="25000">€ 25.000</option><option value="30000">€ 30.000</option><option value="50000">€ 50.000</option></select></div></div>
+    <div class="pref-row"><div class="pref-field"><div class="input-lbl">${T('fields.yearFrom')}</div><select class="pref-select" id="spYear"><option>${T('fields.any')}</option><option>2019</option><option>2020</option><option>2021</option><option>2022</option></select></div>
+    <div class="pref-field"><div class="input-lbl">${T('fields.mileageTo')}</div><select class="pref-select" id="spMileage"><option>${T('fields.any')}</option><option value="50000">50.000</option><option value="100000">100.000</option><option value="150000">150.000</option></select></div></div>
+  </div>`;
+
+  h += `<button class="btn-submit" onclick="submitFeedback()">${T('feedback.saveProfile')}</button>`;
+  document.getElementById('content').innerHTML = h;
+}
+
+let selectedReason = null;
+function selectReason(el, key) {
+  document.querySelectorAll('.fb-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedReason = key;
+}
+
+async function submitFeedback() {
+  if (!feedbackVehicle) return;
+  const extLink = document.getElementById('extLink')?.value;
+
+  await fetch(`/api/dealers/${dealerId}/action`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ vehicle_id: feedbackVehicle.id, action_type: 'not_interested', decline_reason: selectedReason, external_link: extLink || null })
+  });
+
+  const make = document.getElementById('spMake')?.value;
+  const type = document.getElementById('spType')?.value;
+  const fuel = document.getElementById('spFuel')?.value;
+  const priceMin = document.getElementById('spPriceMin')?.value;
+  const priceMax = document.getElementById('spPriceMax')?.value;
+  const yearMin = document.getElementById('spYear')?.value;
+  const mileageMax = document.getElementById('spMileage')?.value;
+
+  const hasPref = (make && !make.includes(T('fields.allMakes'))) || (priceMin && priceMin !== T('fields.min'));
+  if (hasPref) {
+    await fetch(`/api/dealers/${dealerId}/search-profile`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        wanted_makes: make && !make.includes(T('fields.allMakes')) ? [make] : [],
+        wanted_types: type && !type.includes(T('fields.allTypes')) ? [type] : [],
+        wanted_fuels: fuel && !fuel.includes(T('fields.allFuels')) ? [fuel] : [],
+        price_min: parseFloat(priceMin) || null,
+        price_max: parseFloat(priceMax) || null,
+        year_min: parseInt(yearMin) || null,
+        mileage_max: parseInt(mileageMax) || null,
+      })
+    });
+  }
+
+  toast(lang === 'de' ? 'Gespeichert!' : 'Saved!');
+  selectedReason = null;
+  renderTab(currentTab);
+}
+
+async function doAction(vehicleId, type) {
+  await fetch(`/api/dealers/${dealerId}/action`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ vehicle_id: vehicleId, action_type: type })
+  });
+  toast(type === 'contact'
+    ? (lang === 'de' ? 'Kontaktanfrage gesendet!' : 'Contact request sent!')
+    : (lang === 'de' ? 'Gespeichert' : 'Saved'));
+}
+
+// =============================================
+// PROFILE
+// =============================================
+async function renderProfile() {
+  const data = await (await fetch(`/api/dealers/${dealerId}/profile?lang=${lang}`)).json();
+  const c = document.getElementById('content');
+  let h = `<div class="prof-card">
+    <div class="prof-avatar">${data.dealer.initials}</div>
+    <div class="prof-name">${data.dealer.name}</div>
+    <div class="prof-company">${data.dealer.specialization||''} · ${data.dealer.location}</div>
+    <div class="prof-stats">
+      <div class="prof-stat"><div class="prof-stat-num">${data.stats.purchased.value}</div><div class="prof-stat-lbl">${data.stats.purchased.label}</div></div>
+      <div class="prof-stat"><div class="prof-stat-num">${data.stats.thisMonth.value}</div><div class="prof-stat-lbl">${data.stats.thisMonth.label}</div></div>
+      <div class="prof-stat"><div class="prof-stat-num">${data.stats.matchRate.value}</div><div class="prof-stat-lbl">${data.stats.matchRate.label}</div></div>
+    </div>
+  </div>`;
+
+  h += `<div class="pref-card"><div class="pref-card-title">${data.buyingProfile.title}</div>`;
+  for (const item of data.buyingProfile.items) {
+    h += `<div class="pref-item"><span class="pref-item-lbl">${item.label}</span><span class="pref-item-val${item.label===T('profile.topBrands')?' tag':''}">${item.value||'—'}</span></div>`;
+  }
+  h += '</div>';
+
+  h += `<div class="pref-card"><div class="pref-card-title">${data.notifications.title}</div>
+    <div class="pref-item"><span class="pref-item-lbl">${T('profile.dailyRecommendations')}</span><div class="toggle"></div></div>
+    <div class="pref-item"><span class="pref-item-lbl">${T('profile.pushTime')}</span><span class="pref-item-val">${data.notifications.pushTime}</span></div>
+    <div class="pref-item"><span class="pref-item-lbl">${T('profile.maxPerDay')}</span><span class="pref-item-val">${data.notifications.maxPerDay}</span></div>
+  </div>`;
+
+  h += `<div style="text-align:center;margin-top:12px"><select class="pref-select" style="width:auto;display:inline" onchange="dealerId=this.value;renderTab('profile')">
+    <option value="D001" ${dealerId==='D001'?'selected':''}>Autohaus Müller</option>
+    <option value="D002" ${dealerId==='D002'?'selected':''}>Auto König GmbH</option>
+    <option value="D003" ${dealerId==='D003'?'selected':''}>Schmidt Automobile</option>
+    <option value="D004" ${dealerId==='D004'?'selected':''}>Fahrzeughaus Weber</option>
+    <option value="D005" ${dealerId==='D005'?'selected':''}>Riedel & Söhne KFZ</option>
+    <option value="D006" ${dealerId==='D006'?'selected':''}>Kfz-Center Hamburg</option>
+    <option value="D007" ${dealerId==='D007'?'selected':''}>Bayerische Autohandel</option>
+    <option value="D008" ${dealerId==='D008'?'selected':''}>Prestige Cars Köln</option>
+  </select><div style="font-size:9px;color:var(--muted);margin-top:4px">Switch dealer (demo only)</div></div>`;
+
+  c.innerHTML = h;
+}
+
+// Init
+fetch(`/api/i18n/${lang}`).then(r=>r.json()).then(d=>{ i18n=d; renderTab('home'); });
+</script>
+</body>
+</html>

@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dealer Buddy — Admin | carsale24</title>
+<style>
+:root{--blue:#077DB7;--blue-dark:#065f8a;--blue-light:#e8f4fa;--blue-bg:#f0f7fb;--green:#0FA23A;--green-dark:#0c822e;--green-light:#e6f7eb;--bg:#f5f7fa;--white:#fff;--text:#1a2332;--text-sec:#5a6577;--muted:#8e99a8;--border:#e2e7ef;--border-lt:#f0f2f5;--red:#e53e3e;--red-lt:#fef2f2;--orange:#f6993f;--orange-lt:#fff8f0;--purple:#805ad5;--shadow:0 1px 3px rgba(0,0,0,.06);--shadow-md:0 4px 12px rgba(0,0,0,.08);--r:10px;--rl:14px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:250px;background:var(--text);color:#fff;flex-shrink:0;display:flex;flex-direction:column}
+.sidebar-logo{padding:20px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sidebar-brand{display:flex;flex-direction:column}
+.sidebar-logo-mark{font-size:22px;font-weight:800;letter-spacing:-.5px;color:#fff}.sidebar-logo-mark .b{color:var(--blue)}.sidebar-logo-mark .g{color:var(--green)}
+.sidebar-divider{width:32px;height:2px;background:rgba(255,255,255,.15);border-radius:1px;margin:6px 0}
+.sidebar-app-name{font-size:13px;font-weight:600;letter-spacing:-.2px;color:rgba(255,255,255,.6)}
+.sidebar-sub{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:4px}
+.sidebar-nav{padding:12px 0;flex:1}
+.nav-sec{font-size:9px;font-weight:700;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:1.5px;padding:14px 20px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;color:rgba(255,255,255,.55);font-size:13px;font-weight:500;cursor:pointer;border-left:3px solid transparent;transition:.15s}
+.nav-item:hover{background:rgba(255,255,255,.05);color:#fff}
+.nav-item.active{background:rgba(7,125,183,.15);color:#fff;border-left-color:var(--blue)}
+.nav-item svg{width:17px;height:17px;fill:currentColor;flex-shrink:0}
+.sidebar-footer{padding:14px 20px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:8px}
+.sidebar-avatar{width:30px;height:30px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.sidebar-user{font-size:11px;color:rgba(255,255,255,.6)}.sidebar-user strong{color:#fff;display:block}
+.main{flex:1;overflow-y:auto}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.page-title{font-size:18px;font-weight:800;letter-spacing:-.3px}
+.page-sub{font-size:11px;color:var(--muted)}
+.top-actions{display:flex;gap:8px;align-items:center}
+.btn{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;transition:.15s}
+.btn svg{width:14px;height:14px}
+.btn-blue{background:var(--blue);color:#fff}.btn-blue:hover{background:var(--blue-dark)}.btn-blue svg{fill:#fff}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:var(--green-dark)}.btn-green svg{fill:#fff}
+.btn-outline{background:var(--white);color:var(--text);border:1px solid var(--border)}.btn-outline:hover{background:var(--bg)}
+.btn-sm{padding:4px 10px;font-size:11px;border-radius:6px}
+.btn-sm-green{background:var(--green-light);color:var(--green)}.btn-sm-green:hover{background:var(--green);color:#fff}
+.btn-sm-blue{background:var(--blue-light);color:var(--blue)}.btn-sm-blue:hover{background:var(--blue);color:#fff}
+.btn-sm-gray{background:var(--border-lt);color:var(--muted)}
+.btn-sm-red{background:var(--red-lt);color:var(--red)}.btn-sm-red:hover{background:var(--red);color:#fff}
+.page-content{padding:20px 28px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-box{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.stat-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+.stat-icon svg{width:18px;height:18px}
+.stat-icon.bl{background:var(--blue-light)}.stat-icon.bl svg{fill:var(--blue)}
+.stat-icon.gr{background:var(--green-light)}.stat-icon.gr svg{fill:var(--green)}
+.stat-icon.or{background:var(--orange-lt)}.stat-icon.or svg{fill:var(--orange)}
+.stat-icon.pu{background:#f0e6ff}.stat-icon.pu svg{fill:var(--purple)}
+.stat-num{font-size:26px;font-weight:800;letter-spacing:-1px}
+.stat-label{font-size:11px;color:var(--muted);margin-top:1px}
+.stat-change{font-size:10px;font-weight:600;margin-top:4px}
+.stat-change.up{color:var(--green)}
+.card{background:var(--white);border-radius:var(--rl);border:1px solid var(--border);margin-bottom:18px}
+.card-hdr{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-t{font-size:14px;font-weight:700}.card-st{font-size:11px;color:var(--muted);margin-top:1px}
+.card-body{padding:18px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--bg)}
+td{padding:10px 12px;font-size:12px;border-bottom:1px solid var(--border-lt);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.td-b{font-weight:600;color:var(--text)}
+.tag{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600}
+.tag-bl{background:var(--blue-light);color:var(--blue)}
+.tag-gr{background:var(--green-light);color:var(--green)}
+.tag-or{background:var(--orange-lt);color:var(--orange)}
+.tag-red{background:var(--red-lt);color:var(--red)}
+.tag-gy{background:var(--border-lt);color:var(--muted)}
+.score-bar{display:flex;align-items:center;gap:6px}
+.score-fill{height:5px;border-radius:3px;background:var(--border);flex:1;overflow:hidden}
+.score-inner{height:100%;border-radius:3px}
+.score-inner.hi{background:var(--green)}.score-inner.md{background:var(--orange)}.score-inner.lo{background:var(--red)}
+.score-val{font-size:12px;font-weight:700;width:32px;text-align:right}
+.score-val.hi{color:var(--green)}.score-val.md{color:var(--orange)}.score-val.lo{color:var(--red)}
+.alert{padding:12px 16px;border-radius:var(--r);font-size:12px;display:flex;align-items:flex-start;gap:8px;margin-bottom:14px}
+.alert svg{width:16px;height:16px;flex-shrink:0;margin-top:1px}
+.alert-bl{background:var(--blue-light);color:var(--blue-dark)}.alert-bl svg{fill:var(--blue)}
+.alert-gr{background:var(--green-light);color:var(--green-dark)}.alert-gr svg{fill:var(--green)}
+.alert-or{background:var(--orange-lt);color:#92400e}.alert-or svg{fill:var(--orange)}
+.weight-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-lt)}
+.weight-row:last-child{border-bottom:none}
+.weight-lbl{font-size:12px;font-weight:500;width:160px;flex-shrink:0}
+.weight-slider{flex:1;-webkit-appearance:none;height:5px;border-radius:3px;background:var(--border);outline:none}
+.weight-slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--blue);cursor:pointer;border:2px solid #fff;box-shadow:var(--shadow)}
+.weight-val{font-size:13px;font-weight:700;color:var(--blue);width:36px;text-align:right}
+.pipeline{display:flex;gap:0;margin:16px 0}
+.pipe-step{flex:1;text-align:center;position:relative;padding:0 6px}
+.pipe-dot{width:36px;height:36px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;margin:0 auto 6px;position:relative;z-index:2}
+.pipe-dot.gr{background:var(--green)}
+.pipe-lbl{font-size:10px;font-weight:600;color:var(--text)}.pipe-desc{font-size:9px;color:var(--muted);line-height:1.3}
+.pipe-step:not(:last-child)::after{content:'';position:absolute;top:18px;left:calc(50% + 22px);right:calc(-50% + 22px);height:2px;background:var(--border);z-index:1}
+.upload-zone{border:2px dashed var(--border);border-radius:var(--rl);padding:30px;text-align:center;cursor:pointer;transition:.15s}
+.upload-zone:hover{border-color:var(--blue);background:var(--blue-bg)}
+.upload-zone input{display:none}
+.upload-icon{width:40px;height:40px;background:var(--blue-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px}
+.upload-icon svg{width:20px;height:20px;fill:var(--blue)}
+.upload-t{font-size:13px;font-weight:600}.upload-h{font-size:11px;color:var(--muted)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.lang-toggle{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.lang-btn{padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;border:none;background:var(--white);color:var(--muted);font-family:inherit}
+.lang-btn.active{background:var(--blue);color:#fff}
+.hidden{display:none}
+.approve-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-lt)}
+.approve-row:last-child{border-bottom:none}
+.approve-dealer{flex:1}.approve-name{font-size:12px;font-weight:600}.approve-sub{font-size:10px;color:var(--muted)}
+.approve-count{font-size:12px;font-weight:700;color:var(--blue);margin-right:6px}
+.approve-actions{display:flex;gap:4px}
+.toast{position:fixed;top:16px;right:16px;background:var(--green);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;z-index:1000;opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="layout">
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-brand">
+      <div class="sidebar-logo-mark"><span class="b">carsale</span><span class="g">24</span></div>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-app-name">Dealer Buddy</div>
+    </div>
+    <div class="sidebar-sub">Admin Back Office</div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-sec">Overview</div>
+    <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+      <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+      <span data-i18n="admin.dashboard">Dashboard</span>
+    </div>
+    <div class="nav-sec">Data</div>
+    <div class="nav-item" data-page="import" onclick="showPage('import')">
+      <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+      <span data-i18n="admin.dataImport">Data Import</span>
+    </div>
+    <div class="nav-sec">Matching</div>
+    <div class="nav-item" data-page="matching" onclick="showPage('matching')">
+      <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81a.488.488 0 00-.49-.41h-3.84c-.24 0-.43.17-.47.41L9.25 5.35A7.49 7.49 0 007.63 6.29l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.611 3.611 0 0112 15.6z"/></svg>
+      <span data-i18n="admin.matchingLogic">Matching Logic</span>
+    </div>
+    <div class="nav-item" data-page="daily" onclick="showPage('daily')">
+      <svg viewBox="0 0 24 24"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+      <span data-i18n="admin.dailyRun">Daily Run</span>
+    </div>
+    <div class="nav-sec">Output</div>
+    <div class="nav-item" data-page="dealers" onclick="showPage('dealers')">
+      <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      <span data-i18n="admin.dealers">Dealers</span>
+    </div>
+    <div class="nav-item" data-page="intelligence" onclick="showPage('intelligence')">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+      <span data-i18n="admin.dealerIntelligence">Intelligence</span>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="sidebar-avatar">VP</div>
+    <div class="sidebar-user"><strong>Vipin M.</strong>Admin</div>
+  </div>
+</nav>
+
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="page-title" id="pageTitle">Dashboard</div>
+      <div class="page-sub" id="pageSub"></div>
+    </div>
+    <div class="top-actions">
+      <div class="lang-toggle">
+        <button class="lang-btn active" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('de')">DE</button>
+      </div>
+      <button class="btn btn-outline" onclick="loadDashboard()">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+        <span data-i18n="admin.refresh">Refresh</span>
+      </button>
+      <button class="btn btn-green" onclick="runMatching()">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <span data-i18n="admin.runDailyMatch">Run Daily Match</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- PAGE CONTENT CONTAINER -->
+  <div class="page-content" id="pageContent"></div>
+</div>
+</div>
+
+<script>
+const API = '';
+let lang = 'en';
+let i18nData = {};
+
+async function fetchJson(url, opts) {
+  const r = await fetch(API + url, opts);
+  return r.json();
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function setLang(l) {
+  lang = l;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.trim() === l.toUpperCase()));
+  fetch(`/api/i18n/${l}`).then(r => r.json()).then(d => { i18nData = d; applyI18n(); });
+}
+
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const keys = el.dataset.i18n.split('.');
+    let val = i18nData;
+    for (const k of keys) val = val?.[k];
+    if (typeof val === 'string') el.textContent = val;
+  });
+}
+
+function scoreClass(s) { return s >= 70 ? 'hi' : s >= 50 ? 'md' : 'lo'; }
+
+// =============================================
+// PAGES
+// =============================================
+function showPage(page) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+  const loaders = { dashboard: loadDashboard, import: loadImport, matching: loadMatching, daily: loadDaily, dealers: loadDealers, intelligence: loadIntelligence };
+  (loaders[page] || loadDashboard)();
+}
+
+// =============================================
+// DASHBOARD
+// =============================================
+async function loadDashboard() {
+  const d = await fetchJson('/api/admin/dashboard');
+  const s = d.stats;
+  const run = d.latestRun;
+  document.getElementById('pageTitle').textContent = i18nData?.admin?.dashboard || 'Dashboard';
+  document.getElementById('pageSub').textContent = new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  let html = `<div class="stats-grid">
+    <div class="stat-box"><div class="stat-icon bl"><svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/></svg></div><div class="stat-num">${s.activeVehicles}</div><div class="stat-label" data-i18n="admin.activeVehicles">${i18nData?.admin?.activeVehicles||'Active Vehicles'}</div></div>
+    <div class="stat-box"><div class="stat-icon gr"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3z"/></svg></div><div class="stat-num">${s.activeDealers}</div><div class="stat-label" data-i18n="admin.activeDealers">${i18nData?.admin?.activeDealers||'Active Dealers'}</div></div>
+    <div class="stat-box"><div class="stat-icon or"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg></div><div class="stat-num">${s.contactRate}%</div><div class="stat-label" data-i18n="admin.contactRate">${i18nData?.admin?.contactRate||'Contact Rate'}</div></div>
+    <div class="stat-box"><div class="stat-icon pu"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg></div><div class="stat-num">${s.todayPushes}</div><div class="stat-label" data-i18n="admin.pushesSentToday">${i18nData?.admin?.pushesSentToday||'Pushes Sent Today'}</div></div>
+  </div>`;
+
+  if (run) {
+    html += `<div class="card"><div class="card-hdr"><div><div class="card-t" data-i18n="admin.todaysRun">${i18nData?.admin?.todaysRun||"Today's Matching Run"}</div><div class="card-st">${run.run_date} · ${run.status}</div></div><span class="tag tag-${run.status==='completed'?'gr':'or'}">${run.status}</span></div>
+    <div class="card-body"><div class="pipeline">
+      <div class="pipe-step"><div class="pipe-dot">${run.vehicles_count||'—'}</div><div class="pipe-lbl">Vehicles</div></div>
+      <div class="pipe-step"><div class="pipe-dot">${run.dealers_count||'—'}</div><div class="pipe-lbl">Dealers</div></div>
+      <div class="pipe-step"><div class="pipe-dot gr">${run.matches_total||'—'}</div><div class="pipe-lbl">Matches</div></div>
+      <div class="pipe-step"><div class="pipe-dot gr">${run.matches_pushed||'—'}</div><div class="pipe-lbl">Pushed</div></div>
+    </div></div></div>`;
+  }
+
+  html += `<div class="card"><div class="card-hdr"><div><div class="card-t" data-i18n="admin.dealerEngagement">${i18nData?.admin?.dealerEngagement||'Dealer Engagement (Last 24h)'}</div></div></div>
+  <div class="card-body" style="padding:0"><table><thead><tr><th>Dealer</th><th>Pushed</th><th>Contacted</th><th>Declined</th><th>Response</th></tr></thead><tbody>`;
+  for (const de of d.dealerEngagement) {
+    const rate = de.pushed > 0 ? Math.round(((de.contacted + de.declined) / de.pushed) * 100) : 0;
+    html += `<tr><td class="td-b">${de.company_name}</td><td>${de.pushed}</td><td><span class="tag tag-gr">${de.contacted}</span></td><td>${de.declined}</td>
+      <td><div class="score-bar"><div class="score-fill"><div class="score-inner ${scoreClass(rate)}" style="width:${rate}%"></div></div><span class="score-val ${scoreClass(rate)}">${rate}%</span></div></td></tr>`;
+  }
+  html += '</tbody></table></div></div>';
+  document.getElementById('pageContent').innerHTML = html;
+  applyI18n();
+}
+
+// =============================================
+// DATA IMPORT
+// =============================================
+function loadImport() {
+  document.getElementById('pageTitle').textContent = i18nData?.admin?.dataImport || 'Data Import';
+  document.getElementById('pageSub').textContent = '';
+  const html = `
+  <div class="alert alert-bl"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+  <div><strong>Upload CSV files</strong> with vehicle listings, dealer purchase history, or dealer master data. Headers must match the column names in the data mapping.</div></div>
+  <div class="two-col">
+    <div class="card"><div class="card-hdr"><div><div class="card-t">Vehicle Listings</div><div class="card-st">Active inventory to match against dealers</div></div></div>
+    <div class="card-body"><div class="upload-zone" onclick="this.querySelector('input').click()"><input type="file" accept=".csv" onchange="uploadFile('vehicles',this.files[0])">
+    <div class="upload-icon"><svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg></div>
+    <div class="upload-t">Drop CSV here or click</div><div class="upload-h">vehicle_id, make, model, body_type, price, year, mileage_km, fuel_type, postal_code</div></div></div></div>
+
+    <div class="card"><div class="card-hdr"><div><div class="card-t">Purchase History</div><div class="card-st">Dealer past buying data (last 12+ months)</div></div></div>
+    <div class="card-body"><div class="upload-zone" onclick="this.querySelector('input').click()"><input type="file" accept=".csv" onchange="uploadFile('purchases',this.files[0])">
+    <div class="upload-icon"><svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg></div>
+    <div class="upload-t">Drop CSV here or click</div><div class="upload-h">transaction_id, dealer_id, purchased_make, purchased_model, purchased_body_type, purchase_price, purchased_at</div></div></div></div>
+  </div>
+  <div class="card"><div class="card-hdr"><div><div class="card-t">Dealer Master Data</div><div class="card-st">Dealer profiles (only needed once, or when adding new dealers)</div></div></div>
+  <div class="card-body"><div class="upload-zone" onclick="this.querySelector('input').click()" style="max-width:500px"><input type="file" accept=".csv" onchange="uploadFile('dealers',this.files[0])">
+  <div class="upload-icon"><svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg></div>
+  <div class="upload-t">Drop CSV here or click</div><div class="upload-h">dealer_id, company_name, postal_code, email, phone, specialization</div></div></div></div>`;
+  document.getElementById('pageContent').innerHTML = html;
+}
+
+async function uploadFile(type, file) {
+  if (!file) return;
+  const form = new FormData();
+  form.append('file', file);
+  const r = await fetch(`/api/admin/import/${type}`, { method: 'POST', body: form });
+  const d = await r.json();
+  toast(d.success ? `Imported ${d.imported} records` : `Error: ${d.error}`);
+}
+
+// =============================================
+// MATCHING LOGIC
+// =============================================
+async function loadMatching() {
+  document.getElementById('pageTitle').textContent = i18nData?.admin?.matchingEngine || 'Matching Engine';
+  document.getElementById('pageSub').textContent = '';
+  const { config } = await fetchJson('/api/admin/matching/config');
+  const weights = {};
+  config.forEach(c => weights[c.key] = c.value);
+
+  const weightRows = [
+    ['weight_brand', 'Brand / Make Match', 30],
+    ['weight_model', 'Model Match', 30],
+    ['weight_type', 'Vehicle Type Match', 30],
+    ['weight_price', 'Price in Bandwidth', 30],
+    ['weight_year', 'Year / Registration', 30],
+    ['weight_mileage', 'Mileage within Limit', 30],
+    ['weight_fuel', 'Fuel Type Match', 30],
+    ['weight_distance', 'Distance / Location', 30],
+  ];
+
+  let html = `<div class="card"><div class="card-hdr"><div><div class="card-t">Scoring Weights</div><div class="card-st">Adjust how each dimension contributes to the match score (must sum to 100%)</div></div>
+  <button class="btn btn-blue" onclick="saveWeights()">Save Weights</button></div><div class="card-body">`;
+
+  for (const [key, label, max] of weightRows) {
+    html += `<div class="weight-row"><span class="weight-lbl">${label}</span>
+    <input type="range" class="weight-slider" min="0" max="${max}" value="${weights[key]||0}" data-key="${key}" oninput="this.nextElementSibling.textContent=this.value+'%';updateTotal()">
+    <span class="weight-val">${weights[key]||0}%</span></div>`;
+  }
+  html += `<div style="border-top:2px solid var(--border);margin-top:12px;padding-top:12px"><div class="weight-row" style="border:none"><span class="weight-lbl" style="font-weight:700">Total</span><div style="flex:1"></div><span class="weight-val" id="weightTotal" style="font-size:15px">100%</span></div></div>`;
+
+  html += `<div style="margin-top:18px"><div class="card-t" style="margin-bottom:10px">Bonus & Penalty</div>`;
+  html += `<div class="weight-row"><span class="weight-lbl">Freshness Bonus</span><input type="range" class="weight-slider" min="0" max="15" value="${weights.bonus_freshness||0}" data-key="bonus_freshness" oninput="this.nextElementSibling.textContent='+'+this.value+'%'"><span class="weight-val">+${weights.bonus_freshness||0}%</span></div>`;
+  html += `<div class="weight-row"><span class="weight-lbl">Recency Boost</span><input type="range" class="weight-slider" min="0" max="15" value="${weights.bonus_recency||0}" data-key="bonus_recency" oninput="this.nextElementSibling.textContent='+'+this.value+'%'"><span class="weight-val">+${weights.bonus_recency||0}%</span></div>`;
+  html += `<div class="weight-row"><span class="weight-lbl" style="color:var(--red)">Declined Penalty</span><input type="range" class="weight-slider" min="0" max="30" value="${weights.penalty_declined||0}" data-key="penalty_declined" oninput="this.nextElementSibling.textContent='-'+this.value+'%'"><span class="weight-val" style="color:var(--red)">-${weights.penalty_declined||0}%</span></div>`;
+  html += `</div></div></div>`;
+
+  html += `<div class="card"><div class="card-hdr"><div><div class="card-t">Thresholds</div></div></div><div class="card-body">
+  <div class="weight-row"><span class="weight-lbl">Min Match Score</span><input type="range" class="weight-slider" min="50" max="90" value="${weights.min_match_score||70}" data-key="min_match_score" oninput="this.nextElementSibling.textContent=this.value+'%'"><span class="weight-val">${weights.min_match_score||70}%</span></div>
+  <div class="weight-row"><span class="weight-lbl">Max per Dealer/Day</span><input type="range" class="weight-slider" min="3" max="20" value="${weights.max_per_dealer||10}" data-key="max_per_dealer" oninput="this.nextElementSibling.textContent=this.value"><span class="weight-val">${weights.max_per_dealer||10}</span></div>
+  </div></div>`;
+
+  document.getElementById('pageContent').innerHTML = html;
+  updateTotal();
+}
+
+function updateTotal() {
+  const keys = ['weight_brand','weight_model','weight_type','weight_price','weight_year','weight_mileage','weight_fuel','weight_distance'];
+  let total = 0;
+  keys.forEach(k => {
+    const el = document.querySelector(`[data-key="${k}"]`);
+    if (el) total += parseInt(el.value);
+  });
+  const el = document.getElementById('weightTotal');
+  if (el) { el.textContent = total + '%'; el.style.color = total === 100 ? 'var(--green)' : 'var(--red)'; }
+}
+
+async function saveWeights() {
+  const sliders = document.querySelectorAll('.weight-slider[data-key]');
+  const weights = {};
+  sliders.forEach(s => weights[s.dataset.key] = parseFloat(s.value));
+  await fetch('/api/admin/matching/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ weights }) });
+  toast('Weights saved!');
+}
+
+// =============================================
+// DAILY RUN
+// =============================================
+async function loadDaily() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('pageTitle').textContent = `Daily Run — ${today}`;
+  document.getElementById('pageSub').textContent = '';
+  const { results } = await fetchJson(`/api/admin/runs/${today}/results`);
+
+  let html = '';
+  if (results.length === 0) {
+    html = `<div class="alert alert-or"><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+    <div>No matching results for today. Click <strong>"Run Daily Match"</strong> to generate matches.</div></div>`;
+  } else {
+    html += `<div class="alert alert-bl"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+    <div><strong>${results.length} dealers, ${results.reduce((s,r)=>s+r.match_count,0)} matches</strong> ready. Review and approve below.</div></div>`;
+
+    html += `<div class="card"><div class="card-hdr"><div><div class="card-t">Match Results by Dealer</div></div>
+    <div><button class="btn btn-sm-green btn-sm" onclick="approveAll('${today}')">Approve All</button></div></div><div class="card-body">`;
+
+    for (const r of results) {
+      html += `<div class="approve-row">
+        <div class="approve-dealer"><div class="approve-name">${r.company_name} ${r.specialization ? `<span class="tag tag-bl" style="margin-left:4px">${r.specialization}</span>` : ''}</div>
+        <div class="approve-sub">${r.dealer_location} · Avg match: ${r.avg_score}%</div></div>
+        <div class="approve-count">${r.match_count} vehicles</div>
+        <div class="approve-actions">
+          <button class="btn btn-sm btn-sm-blue" onclick="reviewDealer('${today}','${r.dealer_id}','${r.company_name}')">Review</button>
+          <button class="btn btn-sm btn-sm-green" onclick="approveDealer('${today}','${r.dealer_id}')">Approve</button>
+        </div></div>`;
+    }
+    html += '</div></div><div id="dealerReview"></div>';
+  }
+  document.getElementById('pageContent').innerHTML = html;
+}
+
+async function reviewDealer(date, dealerId, name) {
+  const { matches } = await fetchJson(`/api/admin/runs/${date}/dealer/${dealerId}`);
+  let html = `<div class="card"><div class="card-hdr"><div><div class="card-t">Review: ${name} — ${matches.length} Vehicles</div></div>
+  <button class="btn btn-sm btn-sm-green" onclick="approveDealer('${date}','${dealerId}')">Approve All</button></div>
+  <div class="card-body" style="padding:0"><table><thead><tr><th>Vehicle</th><th>Type</th><th>Price</th><th>Year</th><th>KM</th><th>Match</th><th>Why</th><th></th></tr></thead><tbody>`;
+  for (const m of matches) {
+    const reasons = JSON.parse(m.match_reasons || '[]');
+    const sc = Math.round(m.match_score);
+    html += `<tr><td class="td-b">${m.make} ${m.model}</td><td><span class="tag tag-bl">${m.body_type}</span></td>
+      <td>€${m.price?.toLocaleString('de-DE')}</td><td>${m.year||''}</td><td>${m.mileage_km?.toLocaleString('de-DE')||''}</td>
+      <td><div class="score-bar"><div class="score-fill"><div class="score-inner ${scoreClass(sc)}" style="width:${sc}%"></div></div><span class="score-val ${scoreClass(sc)}">${sc}%</span></div></td>
+      <td><span class="tag tag-gr" style="font-size:9px">${reasons.join('+')}</span></td>
+      <td><button class="btn btn-sm btn-sm-red" onclick="removeMatch(${m.id},'${date}','${dealerId}','${name}')">Remove</button></td></tr>`;
+  }
+  html += '</tbody></table></div></div>';
+  document.getElementById('dealerReview').innerHTML = html;
+}
+
+async function approveAll(date) {
+  await fetch(`/api/admin/runs/${date}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+  toast('All matches approved!');
+  loadDaily();
+}
+
+async function approveDealer(date, dealerId) {
+  await fetch(`/api/admin/runs/${date}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dealer_id: dealerId }) });
+  toast('Dealer matches approved!');
+  loadDaily();
+}
+
+async function removeMatch(matchId, date, dealerId, name) {
+  await fetch(`/api/admin/runs/${date}/remove-match`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ match_id: matchId }) });
+  reviewDealer(date, dealerId, name);
+}
+
+async function runMatching() {
+  toast('Running matching engine...');
+  const r = await fetch('/api/admin/matching/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+  const d = await r.json();
+  toast(`Done! ${d.matchesTotal} matches for ${d.dealersCount} dealers`);
+  showPage('daily');
+}
+
+async function sendPush() {
+  toast('Sending push notifications...');
+  const r = await fetch('/api/admin/push/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+  const d = await r.json();
+  toast(`Pushed to ${d.pushed} dealers`);
+}
+
+// =============================================
+// DEALERS
+// =============================================
+async function loadDealers() {
+  document.getElementById('pageTitle').textContent = i18nData?.admin?.dealers || 'Dealers';
+  document.getElementById('pageSub').textContent = '';
+  const { dealers } = await fetchJson('/api/dealers');
+  let html = `<div class="card"><div class="card-hdr"><div><div class="card-t">All Dealers (${dealers.length})</div></div></div>
+  <div class="card-body" style="padding:0"><table><thead><tr><th>Dealer</th><th>Location</th><th>Specialization</th><th>Purchases</th><th>Contacts</th><th>Declines</th><th>Top Makes</th></tr></thead><tbody>`;
+  for (const d of dealers) {
+    const makes = d.top_makes ? JSON.parse(d.top_makes).join(', ') : '—';
+    html += `<tr><td class="td-b">${d.company_name}</td><td>${d.postal_code}</td><td>${d.specialization||'—'}</td>
+      <td>${d.total_purchases||0}</td><td><span class="tag tag-gr">${d.contacts||0}</span></td><td>${d.declines||0}</td>
+      <td><span class="tag tag-bl">${makes}</span></td></tr>`;
+  }
+  html += '</tbody></table></div></div>';
+  document.getElementById('pageContent').innerHTML = html;
+}
+
+// =============================================
+// INTELLIGENCE
+// =============================================
+async function loadIntelligence() {
+  document.getElementById('pageTitle').textContent = i18nData?.admin?.dealerIntelligence || 'Dealer Intelligence';
+  document.getElementById('pageSub').textContent = '';
+  const [declines, links, profiles] = await Promise.all([
+    fetchJson('/api/admin/intelligence/decline-reasons'),
+    fetchJson('/api/admin/intelligence/external-links'),
+    fetchJson('/api/admin/intelligence/search-profiles'),
+  ]);
+
+  let html = '<div class="two-col">';
+
+  html += `<div class="card"><div class="card-hdr"><div><div class="card-t">Top Decline Reasons</div></div></div><div class="card-body">`;
+  if (declines.reasons.length === 0) {
+    html += '<div style="color:var(--muted);font-size:12px">No decline data yet. Dealers need to interact with matches first.</div>';
+  }
+  for (const r of declines.reasons) {
+    const colors = { price_too_high: 'var(--red)', wrong_type: 'var(--orange)', too_high_mileage: 'var(--orange)', wrong_brand: 'var(--blue)', too_far: 'var(--muted)' };
+    html += `<div class="weight-row"><span class="weight-lbl">${r.reason.replace(/_/g,' ')}</span>
+    <div class="score-fill" style="flex:1"><div class="score-inner" style="width:${r.percentage}%;background:${colors[r.reason]||'var(--blue)'}"></div></div>
+    <span class="weight-val" style="color:var(--text)">${r.percentage}%</span></div>`;
+  }
+  html += '</div></div>';
+
+  html += `<div class="card"><div class="card-hdr"><div><div class="card-t">External Links Pasted</div></div></div>
+  <div class="card-body" style="padding:0"><table><thead><tr><th>Dealer</th><th>Link</th><th>Date</th></tr></thead><tbody>`;
+  if (links.links.length === 0) {
+    html += '<tr><td colspan="3" style="color:var(--muted)">No external links yet</td></tr>';
+  }
+  for (const l of links.links) {
+    html += `<tr><td class="td-b">${l.company_name}</td><td style="font-size:11px;word-break:break-all">${l.external_link}</td><td>${new Date(l.created_at).toLocaleDateString()}</td></tr>`;
+  }
+  html += '</tbody></table></div></div></div>';
+
+  html += `<div class="card"><div class="card-hdr"><div><div class="card-t">Dealer Search Profiles</div><div class="card-st">Explicit preferences submitted via the app</div></div></div>
+  <div class="card-body" style="padding:0"><table><thead><tr><th>Dealer</th><th>Makes</th><th>Types</th><th>Budget</th><th>Year</th><th>Max KM</th><th>Updated</th></tr></thead><tbody>`;
+  if (profiles.profiles.length === 0) {
+    html += '<tr><td colspan="7" style="color:var(--muted)">No search profiles yet</td></tr>';
+  }
+  for (const p of profiles.profiles) {
+    const makes = p.wanted_makes ? JSON.parse(p.wanted_makes).join(', ') : '—';
+    const types = p.wanted_types ? JSON.parse(p.wanted_types).join(', ') : '—';
+    html += `<tr><td class="td-b">${p.company_name}</td><td>${makes}</td><td>${types}</td>
+      <td>€${(p.price_min||0).toLocaleString()}–€${(p.price_max||0).toLocaleString()}</td>
+      <td>${p.year_min||'—'}+</td><td>${p.mileage_max?.toLocaleString()||'—'}</td>
+      <td>${new Date(p.updated_at).toLocaleDateString()}</td></tr>`;
+  }
+  html += '</tbody></table></div></div>';
+
+  html += `<div class="alert alert-gr"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+  <div><strong>Learning loop active:</strong> Every decline reason, pasted link, and search profile feeds back into tomorrow's matching engine.</div></div>`;
+
+  document.getElementById('pageContent').innerHTML = html;
+}
+
+// Init
+fetch('/api/i18n/en').then(r => r.json()).then(d => { i18nData = d; loadDashboard(); });
+</script>
+</body>
+</html>
