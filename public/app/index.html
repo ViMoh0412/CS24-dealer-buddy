@@ -32,7 +32,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .sec-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .sec-title{font-size:15px;font-weight:700}.sec-link{font-size:11px;font-weight:600;color:var(--blue)}
 .v-card{background:var(--white);border-radius:var(--rl);box-shadow:var(--shadow);overflow:hidden;margin-bottom:12px}
-.v-img{height:140px;background:linear-gradient(135deg,var(--blue-lt),#d4e8f5);display:flex;align-items:center;justify-content:center;position:relative}
+.v-img{height:160px;background:linear-gradient(135deg,var(--blue-lt),#d4e8f5);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.v-img img{width:100%;height:100%;object-fit:cover}
 .v-img svg{width:60px;height:60px;opacity:.2;fill:var(--blue)}
 .match-badge{position:absolute;top:10px;left:10px;background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:var(--rf)}
 .price-badge{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.7);color:#fff;font-size:12px;font-weight:700;padding:3px 8px;border-radius:var(--rf)}
@@ -94,7 +95,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .toast.show{opacity:1}
 /* Compact list */
 .v-list-item{background:var(--white);border-radius:var(--r);padding:12px;margin-bottom:8px;box-shadow:var(--shadow);display:flex;gap:10px;align-items:center}
-.v-thumb{width:64px;height:48px;background:linear-gradient(135deg,var(--blue-lt),#d4e8f5);border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.v-thumb{width:64px;height:48px;background:linear-gradient(135deg,var(--blue-lt),#d4e8f5);border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.v-thumb img{width:100%;height:100%;object-fit:cover}
 .v-thumb svg{width:24px;height:24px;opacity:.2;fill:var(--blue)}
 .v-list-info{flex:1;min-width:0}
 .v-list-title{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -195,9 +197,10 @@ async function renderHome() {
   for (const m of data.matches.slice(0, 5)) {
     const colors = ['#d4e8f5','#c8ecd2','#d4e8f5','#fde8c8','#e8d4f5'];
     const bgIdx = data.matches.indexOf(m) % colors.length;
+    const imgContent = m.imageUrl ? `<img src="${m.imageUrl}" alt="${m.title}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span style="display:none">${CAR_SVG}</span>` : CAR_SVG;
     h += `<div class="v-card">
       <div class="v-img" style="background:linear-gradient(135deg,var(--blue-lt),${colors[bgIdx]})">
-        ${CAR_SVG}
+        ${imgContent}
         <div class="match-badge">${m.matchBadge}</div>
         <div class="price-badge">€ ${m.price?.toLocaleString('de-DE')}</div>
       </div>
@@ -237,7 +240,7 @@ async function renderVehicles() {
 
   for (const m of data.matches) {
     h += `<div class="v-list-item">
-      <div class="v-thumb">${CAR_SVG}</div>
+      <div class="v-thumb">${m.imageUrl ? `<img src="${m.imageUrl}" alt="${m.title}" loading="lazy" onerror="this.style.display='none'">` : CAR_SVG}</div>
       <div class="v-list-info">
         <div class="v-list-title">${m.title}</div>
         <div class="v-list-detail">${m.year||''} · ${m.mileageKm?.toLocaleString('de-DE')||'—'} km · ${m.location||''}</div>
