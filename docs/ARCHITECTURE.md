@@ -114,6 +114,8 @@ The application uses a single SQLite database file. All tables are created by `s
 | push_enabled | INTEGER | DEFAULT 1 | Whether push notifications are active (0/1) |
 | push_time | TEXT | DEFAULT '07:00' | Preferred push notification time |
 | max_recommendations_per_day | INTEGER | DEFAULT 10 | Max matches to receive per day |
+| dealer_password | TEXT | | Individual login password (auto-generated) |
+| is_active | INTEGER | DEFAULT 1 | Active flag (0 = soft-deleted, 1 = active) |
 | preferred_lang | TEXT | DEFAULT 'de' | Language preference (en/de) |
 | created_at | TEXT | DEFAULT datetime('now') | Record creation timestamp |
 | updated_at | TEXT | DEFAULT datetime('now') | Last update timestamp |
@@ -377,25 +379,35 @@ match_results (pending)
 
 ## 5. Authentication
 
-### 5.1 Current Implementation
+The application uses HTTP Basic Authentication with two separate middleware functions.
 
-The application uses HTTP Basic Authentication with a shared password.
+### 5.1 Admin Auth (`adminAuth`)
+
+Protects the admin dashboard (`/admin/*`).
 
 - The password is set via the `APP_PASSWORD` environment variable
 - If `APP_PASSWORD` is empty or unset, authentication is disabled (all routes are open)
 - The Basic Auth middleware checks only the password field; the username is ignored
-- Protected paths: `/admin/*` and `/app/*` (static file serving)
-- API routes (`/api/*`) are currently unprotected (no auth middleware applied)
+
+### 5.2 Dealer Auth (`dealerAuth`)
+
+Protects the dealer app (`/app/*`).
+
+- **Primary:** Dealer logs in with `dealer_id` as username and their individual `dealer_password`
+- The middleware queries the `dealers` table to verify credentials and checks `is_active = 1`
+- **Fallback:** The admin `APP_PASSWORD` also works as the password field (for testing/admin access)
+- If authenticated as a dealer, `req.dealerId` is set on the request object
 
 ```
-Client Request
-  --> Authorization: Basic base64(username:password)
-  --> Server extracts password from header
-  --> Compares against APP_PASSWORD
-  --> 200 OK or 401 Unauthorized
+Dealer Request
+  --> Authorization: Basic base64(dealer_id:dealer_password)
+  --> Server queries: SELECT dealer_id FROM dealers WHERE dealer_id = ? AND dealer_password = ? AND is_active = 1
+  --> Match found: 200 OK (req.dealerId set)
+  --> No match: check if password === APP_PASSWORD (admin fallback)
+  --> Neither: 401 Unauthorized
 ```
 
-### 5.2 PWA Asset Exceptions
+### 5.3 PWA Asset Exceptions
 
 Certain PWA assets are served without authentication so that the browser/OS can access them before the user logs in:
 
@@ -403,14 +415,11 @@ Certain PWA assets are served without authentication so that the browser/OS can 
 - `/app/sw.js` -- Service worker must be accessible for registration
 - `/app/icons/*` -- App icons for home screen and splash screen
 
-### 5.3 Planned: Per-Dealer Authentication
+### 5.4 Dealer Passwords
 
-A future release will add individual dealer credentials:
-
-- Each dealer will have a `dealer_id` + `password` combination
-- The dealer app will present a login screen
-- API routes will require a dealer-specific auth token
-- Admin routes will retain the shared password or move to role-based access
+- Passwords are auto-generated during dealer creation or bulk onboard using `crypto.randomBytes(4).toString('hex').toUpperCase()` (8-character hex string)
+- Admins can reset a dealer's password from the Dealer Management screen
+- Credentials can be exported as an Excel file for external mailing
 
 ---
 
@@ -544,6 +553,15 @@ The SQLite database is stored in `data/dealer-buddy.db` (or as configured in `sr
 | GET | `/api/admin/intelligence/search-profiles` | All dealer search profiles |
 | GET | `/api/admin/vehicles` | Paginated list of active vehicles. Query params: `page`, `limit` |
 | POST | `/api/admin/vehicles/deactivate-old` | Deactivate vehicles listed more than 30 days ago |
+| GET | `/api/admin/dealer-management/list` | List dealers with profiles. Query params: `search`, `inactive=1` |
+| GET | `/api/admin/dealer-management/:dealerId` | Single dealer detail with full profile data |
+| POST | `/api/admin/dealer-management/add` | Add a new dealer. Body: `{ dealer_id, company_name, postal_code, email?, phone?, specialization?, max_pickup_radius_km? }` |
+| PUT | `/api/admin/dealer-management/:dealerId` | Update dealer fields. Body: partial dealer object |
+| DELETE | `/api/admin/dealer-management/:dealerId` | Soft-delete dealer (sets is_active=0, push_enabled=0) |
+| POST | `/api/admin/dealer-management/:dealerId/reactivate` | Reactivate a soft-deleted dealer |
+| POST | `/api/admin/dealer-management/:dealerId/reset-password` | Generate and return a new password |
+| POST | `/api/admin/dealer-management/onboard` | Bulk onboard dealers from Excel/CSV upload |
+| GET | `/api/admin/dealer-management/export/credentials` | Download Excel file (.xlsx) with all active dealer credentials |
 
 ### 8.2 Dealer Routes (`/api/dealers`)
 
@@ -567,8 +585,8 @@ The SQLite database is stored in `data/dealer-buddy.db` (or as configured in `sr
 
 | Path | Auth | Description |
 |------|------|-------------|
-| `/admin/*` | Yes (Basic Auth) | Admin dashboard SPA |
+| `/admin/*` | Yes (adminAuth -- shared password) | Admin dashboard SPA |
 | `/app/manifest.json` | No | PWA manifest (must be accessible pre-login) |
 | `/app/sw.js` | No | Service worker (must be accessible pre-login) |
 | `/app/icons/*` | No | PWA icons (must be accessible pre-login) |
-| `/app/*` | Yes (Basic Auth) | Dealer PWA |
+| `/app/*` | Yes (dealerAuth -- dealer_id + password) | Dealer PWA |

@@ -10,7 +10,7 @@
 6. [Matching Engine](#6-matching-engine)
 7. [Daily Workflow](#7-daily-workflow)
 8. [PWA Installation](#8-pwa-installation)
-9. [Dealer Management (Coming Soon)](#9-dealer-management-coming-soon)
+9. [Dealer Management](#9-dealer-management)
 
 ---
 
@@ -43,20 +43,25 @@ Carsale24 Dealer Buddy is an intelligent vehicle-matching platform that connects
 
 | Page | URL | Auth |
 |------|-----|------|
-| Admin Dashboard | `https://<your-domain>/admin` | Shared password (Basic Auth) |
-| Dealer App | `https://<your-domain>/app` | Shared password (Basic Auth) |
+| Admin Dashboard | `https://<your-domain>/admin` | Admin password (Basic Auth) |
+| Dealer App | `https://<your-domain>/app` | Dealer ID + dealer password (Basic Auth) |
 | Health Check | `https://<your-domain>/api/health` | None |
 
 ### Logging In
 
-Both the admin dashboard and dealer app are protected by HTTP Basic Authentication.
+Both interfaces use HTTP Basic Authentication. Your browser will display a login prompt when you first navigate to either URL.
 
+**Admin Dashboard:**
 - **Username:** Any value (the system only checks the password)
-- **Password:** Set via the `APP_PASSWORD` environment variable on the server
+- **Password:** The shared admin password set via the `APP_PASSWORD` environment variable
 
-When you first navigate to `/admin` or `/app`, your browser will display a login prompt. Enter any username and the configured password to proceed.
+**Dealer App:**
+- **Username:** The dealer's ID (e.g., `D001`)
+- **Password:** The dealer's individual password (auto-generated during onboarding)
 
-> **Note:** Per-dealer authentication (dealer_id + individual password) is planned for a future release. Currently, all users share the same password.
+Dealer credentials can be exported as an Excel file from the Dealer Management screen. The admin password also works as a fallback for the dealer app (useful for testing).
+
+> **Tip:** If a dealer forgets their password, an admin can reset it from the Dealer Management screen using the "Reset Pwd" button.
 
 ### Language Support
 
@@ -121,16 +126,16 @@ A visual guide showing which purchase history fields map to which scoring dimens
 
 ### 3.3 Data Import
 
-A general-purpose import screen for three data types:
+A general-purpose import screen for three data types. All upload zones accept Excel (.xlsx, .xls) or CSV files.
 
 **Vehicle Listings:**
-Upload CSV files containing active vehicle inventory. Each row represents one vehicle. Duplicates (by `vehicle_id`) are automatically skipped.
+Upload files containing active vehicle inventory. Each row represents one vehicle. Duplicates (by `vehicle_id`) are automatically skipped.
 
 **Purchase History:**
-Upload CSV files with historical dealer transactions. Duplicates are detected by `transaction_id` or by the combination of dealer_id + make + model + price + date.
+Upload files with historical dealer transactions. Duplicates are detected by `transaction_id` or by the combination of dealer_id + make + model + price + date.
 
 **Dealer Master Data:**
-Upload CSV files to add new dealers. Only needed once per dealer, or when onboarding new dealers. Duplicates (by `dealer_id`) are skipped.
+Upload files to add new dealers. Only needed once per dealer, or when onboarding new dealers. Duplicates (by `dealer_id`) are skipped.
 
 After each upload, a toast notification confirms the number of records imported and duplicates skipped.
 
@@ -199,19 +204,9 @@ A table of matched vehicles with columns:
 - Why (match reasons: Brand, Model, Price, etc.)
 - **Remove** button to skip individual matches
 
-### 3.6 Dealers
+### 3.6 Dealer Management
 
-A read-only table listing all dealers in the system with:
-
-| Column | Description |
-|--------|-------------|
-| Dealer | Company name |
-| Location | Postal code |
-| Specialization | Dealer's vehicle specialty (if set) |
-| Purchases | Total historical purchases |
-| Contacts | Number of "contact" actions taken |
-| Declines | Number of "not interested" actions |
-| Top Makes | Most frequently purchased brands (from computed profile) |
+The full dealer lifecycle management screen. See [Section 9](#9-dealer-management) for complete documentation of all features including add/edit, bulk onboard, deactivate/reactivate, password reset, and credential export.
 
 ### 3.7 Intelligence
 
@@ -551,14 +546,71 @@ The app will appear in your app drawer and home screen with full standalone beha
 
 ---
 
-## 9. Dealer Management (Coming Soon)
+## 9. Dealer Management
 
-A dedicated Dealer Management section is planned for a future release. Planned features include:
+The Dealer Management screen provides full dealer lifecycle management from the admin dashboard.
 
-- **Bulk onboarding** -- Upload a spreadsheet of new dealers with automatic account creation
-- **Individual add/edit** -- Form-based dealer creation and profile editing from the admin dashboard
-- **Soft delete** -- Deactivate dealers without removing their historical data
-- **Per-dealer passwords** -- Individual authentication credentials for each dealer, replacing the current shared password
-- **Dealer status management** -- Active, inactive, and suspended states with push notification control
+### 9.1 Dealer List
 
-Until this feature is released, dealer management is handled through CSV import (Data Import screen) and direct database access.
+The main view displays all active dealers in a searchable table with columns:
+
+| Column | Description |
+|--------|-------------|
+| ID | Business dealer identifier (e.g., D001) |
+| Dealer | Company name |
+| Location | Postal code |
+| Email | Contact email address |
+| Specialization | Vehicle specialty (e.g., BMW, Mercedes) |
+| Purchases | Total historical purchase count |
+| Status | Active (green) or Inactive (red) |
+| Actions | Edit, Deactivate/Reactivate, Reset Pwd buttons |
+
+**Search:** Type in the search bar to filter by name, dealer ID, email, or postal code. Click **Search** or press Enter.
+
+**Show Inactive:** Check this box to include deactivated dealers in the list.
+
+### 9.2 Add Dealer
+
+Click **+ Add Dealer** to reveal the inline form.
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| Dealer ID | Yes | Unique business identifier (e.g., D013) |
+| Company Name | Yes | Dealer company name |
+| Postal Code | Yes | Location postal code |
+| Email | No | Contact email |
+| Phone | No | Contact phone |
+| Specialization | No | Vehicle specialty description |
+| Max Pickup Radius (km) | No | Default: 200 km |
+
+A password is automatically generated on creation. The password is shown once in a success message -- note it down or use Export Credentials to retrieve it later.
+
+### 9.3 Edit Dealer
+
+Click **Edit** on any dealer row to open the inline edit form pre-populated with current values. Editable fields include all add fields plus push settings (enabled, time, max recommendations per day).
+
+### 9.4 Deactivate / Reactivate
+
+- **Deactivate:** Soft-deletes the dealer. Sets `is_active = 0` and `push_enabled = 0`. The dealer can no longer log into the app or receive matches. Historical data is preserved.
+- **Reactivate:** Restores the dealer to active status and re-enables push notifications.
+
+### 9.5 Reset Password
+
+Click **Reset Pwd** to generate a new random password for a dealer. The new password is displayed in a success message. Use Export Credentials to get an updated list.
+
+### 9.6 Bulk Onboard
+
+Click **Bulk Onboard** to upload an Excel or CSV file of new dealers. The file format matches the Dealer Master Data import (dealer_id, company_name, postal_code, email, phone, specialization). Passwords are auto-generated for each new dealer. After upload, a table shows all newly onboarded dealers with their credentials.
+
+Duplicates (by dealer_id) are automatically skipped.
+
+### 9.7 Export Credentials
+
+Click **Export Credentials** to download an Excel file (`CS24_Dealer_Credentials.xlsx`) containing all active dealers with:
+
+- Dealer ID, Company Name, Email, Phone, Postal Code, Specialization
+- Generated Password
+- App URL (for the dealer to access the PWA)
+- Created date
+
+This file is intended for external mailing to dealers with their login credentials.
