@@ -149,10 +149,10 @@ tr:last-child td{border-bottom:none}
       <svg viewBox="0 0 24 24"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
       <span data-i18n="admin.dailyRun">Daily Run</span>
     </div>
-    <div class="nav-sec">Output</div>
-    <div class="nav-item" data-page="dealers" onclick="showPage('dealers')">
-      <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-      <span data-i18n="admin.dealers">Dealers</span>
+    <div class="nav-sec">Dealers</div>
+    <div class="nav-item" data-page="dealer-mgmt" onclick="showPage('dealer-mgmt')">
+      <svg viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      <span>Dealer Management</span>
     </div>
     <div class="nav-item" data-page="intelligence" onclick="showPage('intelligence')">
       <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
@@ -232,7 +232,7 @@ function scoreClass(s) { return s >= 70 ? 'hi' : s >= 50 ? 'md' : 'lo'; }
 // =============================================
 function showPage(page) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
-  const loaders = { dashboard: loadDashboard, sales: loadSales, import: loadImport, matching: loadMatching, daily: loadDaily, dealers: loadDealers, intelligence: loadIntelligence };
+  const loaders = { dashboard: loadDashboard, sales: loadSales, import: loadImport, matching: loadMatching, daily: loadDaily, 'dealer-mgmt': loadDealerMgmt, intelligence: loadIntelligence };
   (loaders[page] || loadDashboard)();
 }
 
@@ -649,22 +649,206 @@ async function sendPush() {
 }
 
 // =============================================
-// DEALERS
+// DEALER MANAGEMENT
 // =============================================
-async function loadDealers() {
-  document.getElementById('pageTitle').textContent = i18nData?.admin?.dealers || 'Dealers';
-  document.getElementById('pageSub').textContent = '';
-  const { dealers } = await fetchJson('/api/dealers');
-  let html = `<div class="card"><div class="card-hdr"><div><div class="card-t">All Dealers (${dealers.length})</div></div></div>
-  <div class="card-body" style="padding:0"><table><thead><tr><th>Dealer</th><th>Location</th><th>Specialization</th><th>Purchases</th><th>Contacts</th><th>Declines</th><th>Top Makes</th></tr></thead><tbody>`;
+let dmShowInactive = false;
+let dmSearch = '';
+
+async function loadDealerMgmt() {
+  document.getElementById('pageTitle').textContent = 'Dealer Management';
+  document.getElementById('pageSub').textContent = 'Onboard, edit, and manage dealers';
+
+  const params = new URLSearchParams();
+  if (dmSearch) params.set('search', dmSearch);
+  if (dmShowInactive) params.set('inactive', '1');
+  const { dealers } = await fetchJson(`/api/admin/dealer-management/list?${params}`);
+
+  let html = `
+  <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
+    <input type="text" placeholder="Search by name, ID, email, or postal code..." value="${dmSearch}" oninput="dmSearch=this.value" onkeydown="if(event.key==='Enter')loadDealerMgmt()" style="flex:1;min-width:200px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;outline:none">
+    <button class="btn btn-outline" onclick="loadDealerMgmt()"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg> Search</button>
+    <label style="font-size:11px;display:flex;align-items:center;gap:4px;color:var(--muted)"><input type="checkbox" ${dmShowInactive?'checked':''} onchange="dmShowInactive=this.checked;loadDealerMgmt()"> Show inactive</label>
+    <button class="btn btn-blue" onclick="showAddDealerForm()"><svg viewBox="0 0 24 24" width="14" height="14" fill="#fff"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> Add Dealer</button>
+    <button class="btn btn-outline" onclick="document.getElementById('bulkFile').click()">Bulk Onboard</button>
+    <input type="file" id="bulkFile" accept=".xlsx,.xls,.csv" onchange="bulkOnboard(this.files[0])" style="display:none">
+    <button class="btn btn-outline" onclick="exportCredentials()">Export Credentials</button>
+  </div>
+  <div id="dealerForm"></div>
+  <div id="bulkResult"></div>
+
+  <div class="card"><div class="card-hdr"><div><div class="card-t">${dealers.length} Dealer${dealers.length!==1?'s':''}</div></div></div>
+  <div class="card-body" style="padding:0;overflow-x:auto"><table><thead><tr>
+    <th>ID</th><th>Dealer</th><th>Location</th><th>Email</th><th>Specialization</th><th>Purchases</th><th>Status</th><th>Actions</th>
+  </tr></thead><tbody>`;
+
   for (const d of dealers) {
-    const makes = d.top_makes ? JSON.parse(d.top_makes).join(', ') : '—';
-    html += `<tr><td class="td-b">${d.company_name}</td><td>${d.postal_code}</td><td>${d.specialization||'—'}</td>
-      <td>${d.total_purchases||0}</td><td><span class="tag tag-gr">${d.contacts||0}</span></td><td>${d.declines||0}</td>
-      <td><span class="tag tag-bl">${makes}</span></td></tr>`;
+    const active = d.is_active !== 0;
+    const makes = d.top_makes ? JSON.parse(d.top_makes).slice(0,3).join(', ') : '—';
+    html += `<tr style="${active?'':'opacity:.5'}">
+      <td><span class="tag tag-bl">${d.dealer_id}</span></td>
+      <td class="td-b">${d.company_name}</td>
+      <td>${d.postal_code}</td>
+      <td style="font-size:11px">${d.email||'—'}</td>
+      <td style="font-size:11px">${d.specialization||'—'}</td>
+      <td>${d.total_purchases||0}</td>
+      <td>${active?'<span class="tag tag-gr">Active</span>':'<span class="tag tag-gy">Inactive</span>'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm btn-sm-blue" onclick="editDealer('${d.dealer_id}')">Edit</button>
+        ${active
+          ? `<button class="btn btn-sm btn-sm-red" onclick="deactivateDealer('${d.dealer_id}','${d.company_name.replace(/'/g,"\\'")}')">Deactivate</button>`
+          : `<button class="btn btn-sm btn-sm-green" onclick="reactivateDealer('${d.dealer_id}')">Reactivate</button>`
+        }
+        <button class="btn btn-sm btn-sm-gray" onclick="resetPassword('${d.dealer_id}','${d.company_name.replace(/'/g,"\\'")}')">Reset Pwd</button>
+      </td>
+    </tr>`;
   }
   html += '</tbody></table></div></div>';
   document.getElementById('pageContent').innerHTML = html;
+}
+
+function showAddDealerForm(prefill) {
+  const d = prefill || {};
+  const isEdit = !!d.dealer_id;
+  document.getElementById('dealerForm').innerHTML = `
+  <div class="card" style="margin-bottom:16px"><div class="card-hdr"><div><div class="card-t">${isEdit?'Edit':'Add New'} Dealer</div></div>
+  <button class="btn btn-sm btn-sm-gray" onclick="document.getElementById('dealerForm').innerHTML=''">Cancel</button></div>
+  <div class="card-body"><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+    <div><label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Dealer ID *</label>
+    <input id="f_id" value="${d.dealer_id||''}" ${isEdit?'disabled':''} style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;margin-top:3px"></div>
+    <div><label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Company Name *</label>
+    <input id="f_name" value="${d.company_name||''}" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;margin-top:3px"></div>
+    <div><label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Postal Code *</label>
+    <input id="f_plz" value="${d.postal_code||''}" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;margin-top:3px"></div>
+    <div><label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Email</label>
+    <input id="f_email" value="${d.email||''}" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;margin-top:3px"></div>
+    <div><label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Phone</label>
+    <input id="f_phone" value="${d.phone||''}" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;margin-top:3px"></div>
+    <div><label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Specialization</label>
+    <input id="f_spec" value="${d.specialization||''}" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;margin-top:3px"></div>
+    <div><label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Max Pickup Radius (km)</label>
+    <input id="f_radius" type="number" value="${d.max_pickup_radius_km||200}" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;margin-top:3px"></div>
+    ${isEdit ? `
+    <div><label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Push Enabled</label>
+    <select id="f_push" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;margin-top:3px">
+      <option value="1" ${d.push_enabled!==0?'selected':''}>Yes</option><option value="0" ${d.push_enabled===0?'selected':''}>No</option></select></div>
+    <div><label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Max Recommendations/Day</label>
+    <input id="f_maxrec" type="number" value="${d.max_recommendations_per_day||10}" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;margin-top:3px"></div>
+    ` : ''}
+  </div>
+  <div style="margin-top:14px"><button class="btn btn-green" onclick="${isEdit?`saveDealer('${d.dealer_id}')`:'addDealer()'}">${isEdit?'Save Changes':'Add Dealer'}</button></div>
+  </div></div>`;
+}
+
+async function addDealer() {
+  const body = {
+    dealer_id: document.getElementById('f_id').value.trim(),
+    company_name: document.getElementById('f_name').value.trim(),
+    postal_code: document.getElementById('f_plz').value.trim(),
+    email: document.getElementById('f_email').value.trim(),
+    phone: document.getElementById('f_phone').value.trim(),
+    specialization: document.getElementById('f_spec').value.trim(),
+    max_pickup_radius_km: document.getElementById('f_radius').value,
+  };
+  if (!body.dealer_id || !body.company_name || !body.postal_code) return toast('Dealer ID, Name, and Postal Code are required');
+  const r = await fetch('/api/admin/dealer-management/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const d = await r.json();
+  if (d.success) {
+    toast(`Dealer added! Password: ${d.password}`);
+    document.getElementById('dealerForm').innerHTML = `<div class="alert alert-gr" style="margin-bottom:14px"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+    <div><strong>${body.company_name}</strong> added. Login: <strong>${body.dealer_id}</strong> / <strong>${d.password}</strong></div></div>`;
+    loadDealerMgmt();
+  } else toast(d.error);
+}
+
+async function saveDealer(dealerId) {
+  const body = {
+    company_name: document.getElementById('f_name').value.trim(),
+    postal_code: document.getElementById('f_plz').value.trim(),
+    email: document.getElementById('f_email').value.trim(),
+    phone: document.getElementById('f_phone').value.trim(),
+    specialization: document.getElementById('f_spec').value.trim(),
+    max_pickup_radius_km: document.getElementById('f_radius').value,
+  };
+  const pushEl = document.getElementById('f_push');
+  if (pushEl) body.push_enabled = parseInt(pushEl.value);
+  const maxrecEl = document.getElementById('f_maxrec');
+  if (maxrecEl) body.max_recommendations_per_day = maxrecEl.value;
+
+  const r = await fetch(`/api/admin/dealer-management/${dealerId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const d = await r.json();
+  if (d.success) { toast('Dealer updated'); document.getElementById('dealerForm').innerHTML = ''; loadDealerMgmt(); }
+  else toast(d.error || 'Update failed');
+}
+
+async function editDealer(dealerId) {
+  const { dealer } = await fetchJson(`/api/admin/dealer-management/${dealerId}`);
+  showAddDealerForm(dealer);
+  document.getElementById('dealerForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function deactivateDealer(dealerId, name) {
+  if (!confirm(`Deactivate "${name}"? They will no longer receive matches or push notifications.`)) return;
+  await fetch(`/api/admin/dealer-management/${dealerId}`, { method: 'DELETE' });
+  toast(`${name} deactivated`);
+  loadDealerMgmt();
+}
+
+async function reactivateDealer(dealerId) {
+  await fetch(`/api/admin/dealer-management/${dealerId}/reactivate`, { method: 'POST' });
+  toast('Dealer reactivated');
+  loadDealerMgmt();
+}
+
+async function resetPassword(dealerId, name) {
+  if (!confirm(`Reset password for "${name}"?`)) return;
+  const r = await fetch(`/api/admin/dealer-management/${dealerId}/reset-password`, { method: 'POST' });
+  const d = await r.json();
+  if (d.success) toast(`New password for ${name}: ${d.password}`);
+}
+
+async function bulkOnboard(file) {
+  if (!file) return;
+  const resultDiv = document.getElementById('bulkResult');
+  resultDiv.innerHTML = '<div class="alert alert-bl"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg><div>Processing <strong>' + file.name + '</strong>...</div></div>';
+  const form = new FormData();
+  form.append('file', file);
+  const r = await fetch('/api/admin/dealer-management/onboard', { method: 'POST', body: form });
+  const d = await r.json();
+  if (d.success) {
+    let msg = `<div class="alert alert-gr" style="margin-bottom:14px"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      <div><strong>${d.imported} new dealers onboarded</strong> from ${d.totalRows} rows`;
+    if (d.duplicates > 0) msg += ` · ${d.duplicates} duplicates skipped`;
+    msg += `</div></div>`;
+    if (d.onboarded && d.onboarded.length > 0) {
+      msg += `<div class="card" style="margin-bottom:14px"><div class="card-hdr"><div><div class="card-t">New Dealer Credentials</div><div class="card-st">Save these — passwords are shown only once (or use Export Credentials)</div></div></div>
+      <div class="card-body" style="padding:0"><table><thead><tr><th>Dealer ID</th><th>Company</th><th>Email</th><th>Password</th></tr></thead><tbody>`;
+      for (const o of d.onboarded) {
+        msg += `<tr><td class="td-b">${o.dealer_id}</td><td>${o.company_name}</td><td>${o.email||'—'}</td><td><code style="background:var(--green-light);padding:2px 6px;border-radius:4px;font-weight:700">${o.password}</code></td></tr>`;
+      }
+      msg += '</tbody></table></div></div>';
+    }
+    resultDiv.innerHTML = msg;
+    toast(`${d.imported} dealers onboarded`);
+    loadDealerMgmt();
+  } else {
+    resultDiv.innerHTML = `<div class="alert alert-or"><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><div>${d.error}</div></div>`;
+  }
+  document.getElementById('bulkFile').value = '';
+}
+
+async function exportCredentials() {
+  const { dealers } = await fetchJson('/api/admin/dealer-management/export/credentials');
+  const appUrl = window.location.origin + '/app/';
+  let csv = 'dealer_id,company_name,email,phone,password,app_url\\n';
+  for (const d of dealers) {
+    csv += `${d.dealer_id},"${d.company_name}",${d.email||''},${d.phone||''},${d.dealer_password||'N/A'},${appUrl}\\n`;
+  }
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'dealer_credentials.csv'; a.click();
+  URL.revokeObjectURL(url);
+  toast(`Exported ${dealers.length} dealer credentials`);
 }
 
 // =============================================

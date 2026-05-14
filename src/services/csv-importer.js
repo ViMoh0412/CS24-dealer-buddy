@@ -1,4 +1,5 @@
 const { parse } = require('csv-parse/sync');
+const crypto = require('crypto');
 const XLSX = require('xlsx');
 const { getDb } = require('../config/database');
 
@@ -99,18 +100,23 @@ class CsvImporter {
     return { imported, duplicates, totalRows: records.length };
   }
 
+  _generatePassword() {
+    return crypto.randomBytes(4).toString('hex').toUpperCase();
+  }
+
   importDealers(data, originalName) {
     const records = this._parseInput(data, originalName);
     const checkExisting = this.db.prepare('SELECT 1 FROM dealers WHERE dealer_id = ?');
     const stmt = this.db.prepare(`
       INSERT INTO dealers
         (dealer_id, company_name, postal_code, email, phone,
-         specialization, max_pickup_radius_km)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+         specialization, max_pickup_radius_km, dealer_password, is_active)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
     `);
 
     let imported = 0;
     let duplicates = 0;
+    const onboarded = [];
 
     const importAll = this.db.transaction((rows) => {
       for (const row of rows) {
@@ -118,17 +124,25 @@ class CsvImporter {
           duplicates++;
           continue;
         }
+        const password = row.dealer_password || this._generatePassword();
         stmt.run(
           row.dealer_id, row.company_name, row.postal_code,
           row.email || null, row.phone || null,
           row.specialization || null, parseInt(row.max_pickup_radius_km) || 200,
+          password,
         );
+        onboarded.push({
+          dealer_id: row.dealer_id,
+          company_name: row.company_name,
+          email: row.email || '',
+          password,
+        });
         imported++;
       }
     });
 
     importAll(records);
-    return { imported, duplicates, totalRows: records.length };
+    return { imported, duplicates, totalRows: records.length, onboarded };
   }
 
   importSalesPerformance(data, originalName) {

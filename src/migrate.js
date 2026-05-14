@@ -21,6 +21,8 @@ function migrate() {
       push_time        TEXT DEFAULT '07:00',
       max_recommendations_per_day INTEGER DEFAULT 10,
       preferred_lang   TEXT DEFAULT 'de',
+      dealer_password  TEXT,
+      is_active        INTEGER DEFAULT 1,
       created_at       TEXT DEFAULT (datetime('now')),
       updated_at       TEXT DEFAULT (datetime('now'))
     );
@@ -210,6 +212,15 @@ function migrate() {
       created_at  TEXT DEFAULT (datetime('now'))
     );
   `);
+
+  // Add new columns to existing databases
+  const cols = db.prepare("PRAGMA table_info(dealers)").all().map(c => c.name);
+  if (!cols.includes('dealer_password')) {
+    db.exec("ALTER TABLE dealers ADD COLUMN dealer_password TEXT");
+  }
+  if (!cols.includes('is_active')) {
+    db.exec("ALTER TABLE dealers ADD COLUMN is_active INTEGER DEFAULT 1");
+  }
 
   console.log('Database migrated successfully.');
 }

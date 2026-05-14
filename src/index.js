@@ -25,9 +25,9 @@ app.use(morgan('short'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Basic auth for protected routes
+// Admin auth (shared password)
 const APP_PASSWORD = process.env.APP_PASSWORD || '';
-function basicAuth(req, res, next) {
+function adminAuth(req, res, next) {
   if (!APP_PASSWORD) return next();
   const auth = req.headers.authorization;
   if (auth) {
@@ -37,20 +37,42 @@ function basicAuth(req, res, next) {
       if (pass === APP_PASSWORD) return next();
     }
   }
-  res.set('WWW-Authenticate', 'Basic realm="CS24 Dealer Buddy"');
+  res.set('WWW-Authenticate', 'Basic realm="CS24 Admin"');
   res.status(401).send('Authentication required');
 }
 
-// Serve admin UI (password protected)
-app.use('/admin', basicAuth, express.static(path.join(__dirname, '../public/admin')));
+// Dealer app auth (dealer_id + dealer_password, or admin password as fallback)
+function dealerAuth(req, res, next) {
+  if (!APP_PASSWORD) return next();
+  const auth = req.headers.authorization;
+  if (auth) {
+    const [scheme, encoded] = auth.split(' ');
+    if (scheme === 'Basic') {
+      const [user, pass] = Buffer.from(encoded, 'base64').toString().split(':');
+      // Admin password as fallback for testing
+      if (pass === APP_PASSWORD) { req.dealerId = null; return next(); }
+      // Per-dealer auth: user = dealer_id, pass = dealer_password
+      if (user && pass) {
+        const db = getDb();
+        const dealer = db.prepare('SELECT dealer_id FROM dealers WHERE dealer_id = ? AND dealer_password = ? AND (is_active = 1 OR is_active IS NULL)').get(user, pass);
+        if (dealer) { req.dealerId = dealer.dealer_id; return next(); }
+      }
+    }
+  }
+  res.set('WWW-Authenticate', 'Basic realm="Dealer Buddy"');
+  res.status(401).send('Authentication required');
+}
+
+// Serve admin UI (admin password)
+app.use('/admin', adminAuth, express.static(path.join(__dirname, '../public/admin')));
 
 // Serve PWA assets without auth (browser needs these before login)
 app.use('/app/manifest.json', express.static(path.join(__dirname, '../public/app/manifest.json')));
 app.use('/app/sw.js', express.static(path.join(__dirname, '../public/app/sw.js')));
 app.use('/app/icons', express.static(path.join(__dirname, '../public/app/icons')));
 
-// Serve dealer app (password protected)
-app.use('/app', basicAuth, express.static(path.join(__dirname, '../public/app')));
+// Serve dealer app (dealer auth)
+app.use('/app', dealerAuth, express.static(path.join(__dirname, '../public/app')));
 
 // API routes
 app.use('/api/dealers', dealerRoutes);

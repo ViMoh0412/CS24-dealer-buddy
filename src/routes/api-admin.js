@@ -357,4 +357,145 @@ router.post('/vehicles/deactivate-old', (req, res) => {
   res.json({ success: true, deactivated: result.changes });
 });
 
+// =============================================
+// DEALER MANAGEMENT
+// =============================================
+const crypto = require('crypto');
+
+function generatePassword() {
+  return crypto.randomBytes(4).toString('hex').toUpperCase();
+}
+
+router.get('/dealer-management/list', (req, res) => {
+  const db = getDb();
+  const search = req.query.search || '';
+  const showInactive = req.query.inactive === '1';
+
+  let query = `
+    SELECT d.*, dp.top_makes, dp.total_purchases, dp.last_purchase,
+      (SELECT COUNT(*) FROM dealer_actions da WHERE da.dealer_id = d.dealer_id AND da.action_type = 'contact') as contacts,
+      (SELECT COUNT(*) FROM dealer_actions da WHERE da.dealer_id = d.dealer_id AND da.action_type = 'not_interested') as declines
+    FROM dealers d
+    LEFT JOIN dealer_profiles dp ON dp.dealer_id = d.dealer_id
+  `;
+  const conditions = [];
+  const params = [];
+
+  if (!showInactive) {
+    conditions.push('(d.is_active = 1 OR d.is_active IS NULL)');
+  }
+  if (search) {
+    conditions.push('(d.company_name LIKE ? OR d.dealer_id LIKE ? OR d.email LIKE ? OR d.postal_code LIKE ?)');
+    const s = `%${search}%`;
+    params.push(s, s, s, s);
+  }
+
+  if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
+  query += ' ORDER BY d.company_name';
+
+  const dealers = db.prepare(query).all(...params);
+  res.json({ dealers });
+});
+
+router.get('/dealer-management/:dealerId', (req, res) => {
+  const db = getDb();
+  const dealer = db.prepare(`
+    SELECT d.*, dp.top_makes, dp.top_models, dp.body_types, dp.fuel_types,
+      dp.price_min, dp.price_max, dp.year_min, dp.year_max,
+      dp.mileage_avg, dp.total_purchases, dp.last_purchase
+    FROM dealers d
+    LEFT JOIN dealer_profiles dp ON dp.dealer_id = d.dealer_id
+    WHERE d.dealer_id = ?
+  `).get(req.params.dealerId);
+  if (!dealer) return res.status(404).json({ error: 'Dealer not found' });
+  res.json({ dealer });
+});
+
+router.post('/dealer-management/add', (req, res) => {
+  const db = getDb();
+  const { dealer_id, company_name, postal_code, email, phone, specialization, max_pickup_radius_km } = req.body;
+  if (!dealer_id || !company_name || !postal_code) {
+    return res.status(400).json({ error: 'dealer_id, company_name, and postal_code are required' });
+  }
+  const existing = db.prepare('SELECT 1 FROM dealers WHERE dealer_id = ?').get(dealer_id);
+  if (existing) return res.status(409).json({ error: 'Dealer ID already exists' });
+
+  const password = generatePassword();
+  db.prepare(`
+    INSERT INTO dealers (dealer_id, company_name, postal_code, email, phone, specialization, max_pickup_radius_km, dealer_password, is_active)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+  `).run(dealer_id, company_name, postal_code, email || null, phone || null, specialization || null, parseInt(max_pickup_radius_km) || 200, password);
+
+  res.json({ success: true, dealer_id, password });
+});
+
+router.put('/dealer-management/:dealerId', (req, res) => {
+  const db = getDb();
+  const { company_name, postal_code, email, phone, specialization, max_pickup_radius_km, push_enabled, push_time, max_recommendations_per_day } = req.body;
+  const dealer = db.prepare('SELECT 1 FROM dealers WHERE dealer_id = ?').get(req.params.dealerId);
+  if (!dealer) return res.status(404).json({ error: 'Dealer not found' });
+
+  db.prepare(`
+    UPDATE dealers SET
+      company_name = COALESCE(?, company_name),
+      postal_code = COALESCE(?, postal_code),
+      email = ?, phone = ?, specialization = ?,
+      max_pickup_radius_km = COALESCE(?, max_pickup_radius_km),
+      push_enabled = COALESCE(?, push_enabled),
+      push_time = COALESCE(?, push_time),
+      max_recommendations_per_day = COALESCE(?, max_recommendations_per_day),
+      updated_at = datetime('now')
+    WHERE dealer_id = ?
+  `).run(company_name, postal_code, email ?? null, phone ?? null, specialization ?? null,
+    max_pickup_radius_km ? parseInt(max_pickup_radius_km) : null,
+    push_enabled != null ? (push_enabled ? 1 : 0) : null,
+    push_time, max_recommendations_per_day ? parseInt(max_recommendations_per_day) : null,
+    req.params.dealerId);
+
+  res.json({ success: true });
+});
+
+router.delete('/dealer-management/:dealerId', (req, res) => {
+  const db = getDb();
+  const dealer = db.prepare('SELECT company_name FROM dealers WHERE dealer_id = ?').get(req.params.dealerId);
+  if (!dealer) return res.status(404).json({ error: 'Dealer not found' });
+
+  db.prepare("UPDATE dealers SET is_active = 0, push_enabled = 0, updated_at = datetime('now') WHERE dealer_id = ?").run(req.params.dealerId);
+  res.json({ success: true, message: `${dealer.company_name} deactivated` });
+});
+
+router.post('/dealer-management/:dealerId/reactivate', (req, res) => {
+  const db = getDb();
+  db.prepare("UPDATE dealers SET is_active = 1, push_enabled = 1, updated_at = datetime('now') WHERE dealer_id = ?").run(req.params.dealerId);
+  res.json({ success: true });
+});
+
+router.post('/dealer-management/:dealerId/reset-password', (req, res) => {
+  const db = getDb();
+  const password = generatePassword();
+  db.prepare("UPDATE dealers SET dealer_password = ?, updated_at = datetime('now') WHERE dealer_id = ?").run(password, req.params.dealerId);
+  res.json({ success: true, password });
+});
+
+router.post('/dealer-management/onboard', upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  try {
+    const importer = new CsvImporter();
+    const result = importer.importDealers(req.file.buffer, req.file.originalname);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.get('/dealer-management/export/credentials', (req, res) => {
+  const db = getDb();
+  const dealers = db.prepare(`
+    SELECT dealer_id, company_name, email, phone, dealer_password, is_active, created_at
+    FROM dealers WHERE is_active = 1 OR is_active IS NULL
+    ORDER BY company_name
+  `).all();
+  res.json({ dealers });
+});
+
 module.exports = router;

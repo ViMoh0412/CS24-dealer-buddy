@@ -49,13 +49,15 @@ function seed() {
     { id: 'D012', name: 'Dresdner Fahrzeugmarkt',   plz: '01067', email: 'info@dresdner-fzm.de',      phone: '+49 351 4443322',  spec: 'VW, Skoda, Hyundai',         radius: 190 },
   ];
 
+  const crypto = require('crypto');
   const insertDealer = db.prepare(`
-    INSERT OR REPLACE INTO dealers (dealer_id, company_name, postal_code, email, phone, specialization, max_pickup_radius_km, preferred_lang)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 'de')
+    INSERT OR REPLACE INTO dealers (dealer_id, company_name, postal_code, email, phone, specialization, max_pickup_radius_km, preferred_lang, dealer_password, is_active)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'de', ?, 1)
   `);
   const insertDealersTx = db.transaction(() => {
     for (const d of dealers) {
-      insertDealer.run(d.id, d.name, d.plz, d.email, d.phone, d.spec, d.radius);
+      const pwd = crypto.randomBytes(4).toString('hex').toUpperCase();
+      insertDealer.run(d.id, d.name, d.plz, d.email, d.phone, d.spec, d.radius, pwd);
     }
   });
   insertDealersTx();
