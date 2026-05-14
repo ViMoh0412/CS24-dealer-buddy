@@ -132,6 +132,10 @@ tr:last-child td{border-bottom:none}
       <span data-i18n="admin.dashboard">Dashboard</span>
     </div>
     <div class="nav-sec">Data</div>
+    <div class="nav-item" data-page="sales" onclick="showPage('sales')">
+      <svg viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg>
+      <span>Sales Performance</span>
+    </div>
     <div class="nav-item" data-page="import" onclick="showPage('import')">
       <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
       <span data-i18n="admin.dataImport">Data Import</span>
@@ -228,7 +232,7 @@ function scoreClass(s) { return s >= 70 ? 'hi' : s >= 50 ? 'md' : 'lo'; }
 // =============================================
 function showPage(page) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
-  const loaders = { dashboard: loadDashboard, import: loadImport, matching: loadMatching, daily: loadDaily, dealers: loadDealers, intelligence: loadIntelligence };
+  const loaders = { dashboard: loadDashboard, sales: loadSales, import: loadImport, matching: loadMatching, daily: loadDaily, dealers: loadDealers, intelligence: loadIntelligence };
   (loaders[page] || loadDashboard)();
 }
 
@@ -272,6 +276,187 @@ async function loadDashboard() {
 }
 
 // =============================================
+// SALES PERFORMANCE
+// =============================================
+async function loadSales() {
+  document.getElementById('pageTitle').textContent = 'Sales Performance';
+  document.getElementById('pageSub').textContent = 'Upload dealer purchase history to build behavior patterns';
+
+  const summary = await fetchJson('/api/admin/sales-performance/summary');
+  const hasData = summary.total > 0;
+
+  let html = `
+  <div class="alert alert-bl"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+  <div><strong>Upload 18+ months of dealer sales data</strong> to let the matching engine learn each dealer's buying behavior — preferred makes, price ranges, body types, mileage tolerance, and fuel preferences. After upload, dealer profiles are automatically rebuilt.</div></div>
+
+  <div class="two-col">
+    <div class="card"><div class="card-hdr"><div><div class="card-t">Upload Sales Data</div><div class="card-st">Excel (.xlsx) or CSV — one row per transaction</div></div></div>
+    <div class="card-body">
+      <div class="upload-zone" id="salesDropZone" onclick="document.getElementById('salesFileInput').click()">
+        <input type="file" id="salesFileInput" accept=".xlsx,.xls,.csv" onchange="uploadSalesFile(this.files[0])" style="display:none">
+        <div class="upload-icon"><svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg></div>
+        <div class="upload-t">Drop Excel/CSV here or click to browse</div>
+        <div class="upload-h">Accepts .xlsx, .xls, or .csv files</div>
+      </div>
+      <div id="salesUploadResult" style="margin-top:12px"></div>
+
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px">Required Columns</div>
+        <table style="font-size:11px">
+          <thead><tr><th>Column</th><th>Required</th><th>Description</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td class="td-b">dealer_id</td><td><span class="tag tag-red">Yes</span></td><td>Unique dealer code</td><td>D001</td></tr>
+            <tr><td class="td-b">purchased_make</td><td><span class="tag tag-red">Yes</span></td><td>Vehicle brand purchased</td><td>BMW</td></tr>
+            <tr><td class="td-b">purchased_model</td><td><span class="tag tag-or">Recommended</span></td><td>Model name</td><td>320d Touring</td></tr>
+            <tr><td class="td-b">purchased_body_type</td><td><span class="tag tag-or">Recommended</span></td><td>Kombi, Limousine, SUV, etc.</td><td>Kombi</td></tr>
+            <tr><td class="td-b">purchase_price</td><td><span class="tag tag-red">Yes</span></td><td>Purchase price in EUR</td><td>18500</td></tr>
+            <tr><td class="td-b">purchased_at</td><td><span class="tag tag-red">Yes</span></td><td>Date of purchase (YYYY-MM-DD)</td><td>2025-03-15</td></tr>
+            <tr><td class="td-b">purchased_year</td><td><span class="tag tag-gy">Optional</span></td><td>Year of vehicle purchased</td><td>2019</td></tr>
+            <tr><td class="td-b">purchased_mileage</td><td><span class="tag tag-gy">Optional</span></td><td>Odometer reading (km)</td><td>85000</td></tr>
+            <tr><td class="td-b">purchased_fuel</td><td><span class="tag tag-gy">Optional</span></td><td>Diesel, Benzin, Elektro, Hybrid</td><td>Diesel</td></tr>
+            <tr><td class="td-b">transaction_id</td><td><span class="tag tag-gy">Optional</span></td><td>Your internal reference (auto-generated if blank)</td><td>INV-2025-001234</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div></div>
+
+    <div>
+      <div class="card"><div class="card-hdr"><div><div class="card-t">Data Summary</div></div></div>
+      <div class="card-body">`;
+
+  if (hasData) {
+    const months = summary.dateRange.earliest && summary.dateRange.latest
+      ? Math.max(1, Math.round((new Date(summary.dateRange.latest) - new Date(summary.dateRange.earliest)) / (30*86400000)))
+      : 0;
+    html += `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <div class="stat-box" style="padding:12px"><div class="stat-num" style="font-size:22px">${summary.total.toLocaleString()}</div><div class="stat-label">Total Transactions</div></div>
+          <div class="stat-box" style="padding:12px"><div class="stat-num" style="font-size:22px">${summary.dealers}</div><div class="stat-label">Dealers Covered</div></div>
+          <div class="stat-box" style="padding:12px"><div class="stat-num" style="font-size:22px">${months}</div><div class="stat-label">Months of History</div></div>
+          <div class="stat-box" style="padding:12px"><div class="stat-num" style="font-size:22px">${summary.dateRange.earliest?.substring(0,7) || '—'}</div><div class="stat-label">Earliest Record</div></div>
+        </div>`;
+  } else {
+    html += `<div style="text-align:center;color:var(--muted);font-size:12px;padding:20px 0">No sales data uploaded yet. Upload your first file to get started.</div>`;
+  }
+
+  html += `</div></div>
+
+      <div class="card"><div class="card-hdr"><div><div class="card-t">How It Feeds the Engine</div></div></div>
+      <div class="card-body" style="font-size:12px;color:var(--text-sec);line-height:1.7">
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+          <span class="tag tag-bl" style="white-space:nowrap;margin-top:2px">Brand</span>
+          <span>Top makes from purchase history → <strong>weight_brand</strong></span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+          <span class="tag tag-bl" style="white-space:nowrap;margin-top:2px">Model</span>
+          <span>Preferred models → <strong>weight_model</strong></span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+          <span class="tag tag-bl" style="white-space:nowrap;margin-top:2px">Type</span>
+          <span>Kombi vs SUV vs Limousine preference → <strong>weight_type</strong></span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+          <span class="tag tag-gr" style="white-space:nowrap;margin-top:2px">Price</span>
+          <span>Min/max/P25/P75 price bandwidth → <strong>weight_price</strong></span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+          <span class="tag tag-gr" style="white-space:nowrap;margin-top:2px">Year</span>
+          <span>Vehicle age range tolerance → <strong>weight_year</strong></span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+          <span class="tag tag-or" style="white-space:nowrap;margin-top:2px">Mileage</span>
+          <span>Average + max km tolerance → <strong>weight_mileage</strong></span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+          <span class="tag tag-or" style="white-space:nowrap;margin-top:2px">Fuel</span>
+          <span>Diesel/Benzin/Elektro preference → <strong>weight_fuel</strong></span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <span class="tag tag-gy" style="white-space:nowrap;margin-top:2px">Recency</span>
+          <span>Last purchase date → <strong>bonus_recency</strong></span>
+        </div>
+      </div></div>
+    </div>
+  </div>`;
+
+  if (hasData && summary.topMakes.length > 0) {
+    html += `<div class="two-col">
+    <div class="card"><div class="card-hdr"><div><div class="card-t">Top Makes Purchased</div></div></div>
+    <div class="card-body">`;
+    const maxMake = summary.topMakes[0]?.cnt || 1;
+    for (const m of summary.topMakes) {
+      const pct = Math.round((m.cnt / maxMake) * 100);
+      html += `<div class="weight-row"><span class="weight-lbl">${m.purchased_make}</span>
+        <div class="score-fill" style="flex:1"><div class="score-inner hi" style="width:${pct}%"></div></div>
+        <span class="weight-val" style="color:var(--text)">${m.cnt}</span></div>`;
+    }
+    html += `</div></div>`;
+
+    html += `<div class="card"><div class="card-hdr"><div><div class="card-t">Monthly Volume</div></div></div>
+    <div class="card-body" style="padding:0"><table><thead><tr><th>Month</th><th>Transactions</th><th>Avg Price</th></tr></thead><tbody>`;
+    for (const m of summary.monthlyVolume.slice(0, 12)) {
+      html += `<tr><td class="td-b">${m.month}</td><td>${m.cnt}</td><td>€${(m.avg_price||0).toLocaleString('de-DE')}</td></tr>`;
+    }
+    html += `</tbody></table></div></div></div>`;
+
+    html += `<div class="card"><div class="card-hdr"><div><div class="card-t">Dealer Breakdown</div><div class="card-st">Purchase patterns per dealer — these drive the matching profiles</div></div></div>
+    <div class="card-body" style="padding:0"><table><thead><tr><th>Dealer</th><th>Purchases</th><th>Avg Price</th><th>First Purchase</th><th>Last Purchase</th><th>Coverage</th></tr></thead><tbody>`;
+    for (const d of summary.dealerBreakdown) {
+      const first = d.first_purchase?.substring(0,10) || '—';
+      const last = d.last_purchase?.substring(0,10) || '—';
+      const months = d.first_purchase && d.last_purchase
+        ? Math.max(1, Math.round((new Date(d.last_purchase) - new Date(d.first_purchase)) / (30*86400000)))
+        : 0;
+      const coverageColor = months >= 12 ? 'gr' : months >= 6 ? 'or' : 'red';
+      html += `<tr><td class="td-b">${d.company_name}</td><td>${d.purchases}</td>
+        <td>€${(d.avg_price||0).toLocaleString('de-DE')}</td><td>${first}</td><td>${last}</td>
+        <td><span class="tag tag-${coverageColor}">${months} months</span></td></tr>`;
+    }
+    html += `</tbody></table></div></div>`;
+  }
+
+  document.getElementById('pageContent').innerHTML = html;
+
+  const dropZone = document.getElementById('salesDropZone');
+  if (dropZone) {
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'var(--blue)'; dropZone.style.background = 'var(--blue-bg)'; });
+    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = ''; dropZone.style.background = ''; });
+    dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.style.borderColor = ''; dropZone.style.background = ''; if (e.dataTransfer.files.length) uploadSalesFile(e.dataTransfer.files[0]); });
+  }
+}
+
+async function uploadSalesFile(file) {
+  if (!file) return;
+  const resultDiv = document.getElementById('salesUploadResult');
+  resultDiv.innerHTML = '<div class="alert alert-bl"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg><div>Uploading and processing <strong>' + file.name + '</strong>...</div></div>';
+
+  const form = new FormData();
+  form.append('file', file);
+  try {
+    const r = await fetch('/api/admin/import/sales-performance', { method: 'POST', body: form });
+    const d = await r.json();
+    if (d.success) {
+      let msg = `<div class="alert alert-gr"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        <div><strong>${d.imported} new transactions imported</strong> from ${d.totalRows} rows · ${d.dealersAffected} dealers affected · ${d.profilesRebuilt} profiles rebuilt`;
+      if (d.duplicates > 0) msg += ` · <span style="color:var(--muted)">${d.duplicates} duplicates skipped</span>`;
+      if (d.skipped > 0) msg += ` · <span style="color:var(--orange)">${d.skipped} rows skipped (errors)</span>`;
+      msg += `</div></div>`;
+      if (d.errors && d.errors.length > 0) {
+        msg += `<div class="alert alert-or" style="margin-top:6px"><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+        <div><strong>Row errors:</strong><br>${d.errors.map(e => 'Row ' + e.row + ': ' + e.reason).join('<br>')}</div></div>`;
+      }
+      resultDiv.innerHTML = msg;
+      toast(`${d.imported} new records imported${d.duplicates ? `, ${d.duplicates} duplicates skipped` : ''} — profiles rebuilt`);
+      setTimeout(() => loadSales(), 1500);
+    } else {
+      resultDiv.innerHTML = `<div class="alert alert-or"><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><div><strong>Error:</strong> ${d.error}</div></div>`;
+    }
+  } catch (err) {
+    resultDiv.innerHTML = `<div class="alert alert-or"><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg><div><strong>Upload failed:</strong> ${err.message}</div></div>`;
+  }
+}
+
+// =============================================
 // DATA IMPORT
 // =============================================
 function loadImport() {
@@ -304,7 +489,13 @@ async function uploadFile(type, file) {
   form.append('file', file);
   const r = await fetch(`/api/admin/import/${type}`, { method: 'POST', body: form });
   const d = await r.json();
-  toast(d.success ? `Imported ${d.imported} records` : `Error: ${d.error}`);
+  if (d.success) {
+    let msg = `Imported ${d.imported} new records`;
+    if (d.duplicates > 0) msg += ` · ${d.duplicates} duplicates skipped`;
+    toast(msg);
+  } else {
+    toast(`Error: ${d.error}`);
+  }
 }
 
 // =============================================

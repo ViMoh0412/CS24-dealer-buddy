@@ -63,22 +63,72 @@ router.get('/dashboard', (req, res) => {
 router.post('/import/vehicles', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   const importer = new CsvImporter();
-  const count = importer.importVehicles(req.file.buffer.toString());
-  res.json({ success: true, imported: count });
+  const result = importer.importVehicles(req.file.buffer, req.file.originalname);
+  res.json({ success: true, ...result });
 });
 
 router.post('/import/purchases', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   const importer = new CsvImporter();
-  const count = importer.importPurchaseHistory(req.file.buffer.toString());
-  res.json({ success: true, imported: count });
+  const result = importer.importPurchaseHistory(req.file.buffer, req.file.originalname);
+  res.json({ success: true, ...result });
 });
 
 router.post('/import/dealers', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   const importer = new CsvImporter();
-  const count = importer.importDealers(req.file.buffer.toString());
-  res.json({ success: true, imported: count });
+  const result = importer.importDealers(req.file.buffer, req.file.originalname);
+  res.json({ success: true, ...result });
+});
+
+router.post('/import/sales-performance', upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  try {
+    const importer = new CsvImporter();
+    const result = importer.importSalesPerformance(req.file.buffer, req.file.originalname);
+
+    const engine = new MatchingEngine();
+    const profileCount = engine.buildDealerProfiles();
+
+    res.json({
+      success: true,
+      imported: result.imported,
+      duplicates: result.duplicates,
+      skipped: result.skipped,
+      totalRows: result.totalRows,
+      dealersAffected: result.dealerIds.length,
+      profilesRebuilt: profileCount,
+      errors: result.errors,
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.get('/sales-performance/summary', (req, res) => {
+  const db = getDb();
+  const total = db.prepare('SELECT COUNT(*) as cnt FROM purchase_history').get().cnt;
+  const dealers = db.prepare('SELECT COUNT(DISTINCT dealer_id) as cnt FROM purchase_history').get().cnt;
+  const dateRange = db.prepare('SELECT MIN(purchased_at) as earliest, MAX(purchased_at) as latest FROM purchase_history').get();
+  const topMakes = db.prepare(`
+    SELECT purchased_make, COUNT(*) as cnt FROM purchase_history
+    GROUP BY purchased_make ORDER BY cnt DESC LIMIT 10
+  `).all();
+  const monthlyVolume = db.prepare(`
+    SELECT strftime('%Y-%m', purchased_at) as month, COUNT(*) as cnt,
+      ROUND(AVG(purchase_price)) as avg_price
+    FROM purchase_history
+    GROUP BY month ORDER BY month DESC LIMIT 24
+  `).all();
+  const dealerBreakdown = db.prepare(`
+    SELECT ph.dealer_id, d.company_name, COUNT(*) as purchases,
+      ROUND(AVG(ph.purchase_price)) as avg_price,
+      MIN(ph.purchased_at) as first_purchase, MAX(ph.purchased_at) as last_purchase
+    FROM purchase_history ph
+    JOIN dealers d ON d.dealer_id = ph.dealer_id
+    GROUP BY ph.dealer_id ORDER BY purchases DESC
+  `).all();
+  res.json({ total, dealers, dateRange, topMakes, monthlyVolume, dealerBreakdown });
 });
 
 // =============================================
