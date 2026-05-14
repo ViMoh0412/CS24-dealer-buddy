@@ -4,7 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Dealer Buddy">
 <meta name="theme-color" content="#077DB7">
+<meta name="description" content="Vehicle matches & notifications for carsale24 dealers">
+<link rel="manifest" href="/app/manifest.json">
+<link rel="apple-touch-icon" href="/app/icons/icon-192.png">
 <title>Dealer Buddy | carsale24</title>
 <style>
 :root{--blue:#077DB7;--blue-dk:#065f8a;--blue-lt:#e8f4fa;--green:#0FA23A;--green-dk:#0c822e;--green-lt:#e6f7eb;--bg:#f5f7fa;--white:#fff;--card:#fff;--text:#1a2332;--text-sec:#5a6577;--muted:#8e99a8;--border:#e2e7ef;--border-lt:#f0f2f5;--red:#e53e3e;--red-lt:#fef2f2;--orange:#f6993f;--shadow:0 1px 3px rgba(0,0,0,.06);--shadow-md:0 4px 12px rgba(0,0,0,.08);--r:12px;--rl:16px;--rf:9999px}
@@ -402,6 +407,15 @@ async function renderProfile() {
 
 // Init
 fetch(`/api/i18n/${lang}`).then(r=>r.json()).then(d=>{ i18n=d; renderTab('home'); });
+
+// Service Worker registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/app/sw.js', { scope: '/app/' })
+      .then(reg => console.log('SW registered, scope:', reg.scope))
+      .catch(err => console.log('SW registration failed:', err));
+  });
+}
 </script>
 </body>
 </html>

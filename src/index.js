@@ -44,6 +44,11 @@ function basicAuth(req, res, next) {
 // Serve admin UI (password protected)
 app.use('/admin', basicAuth, express.static(path.join(__dirname, '../public/admin')));
 
+// Serve PWA assets without auth (browser needs these before login)
+app.use('/app/manifest.json', express.static(path.join(__dirname, '../public/app/manifest.json')));
+app.use('/app/sw.js', express.static(path.join(__dirname, '../public/app/sw.js')));
+app.use('/app/icons', express.static(path.join(__dirname, '../public/app/icons')));
+
 // Serve dealer app (password protected)
 app.use('/app', basicAuth, express.static(path.join(__dirname, '../public/app')));
 
