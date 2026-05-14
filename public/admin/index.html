@@ -464,22 +464,22 @@ function loadImport() {
   document.getElementById('pageSub').textContent = '';
   const html = `
   <div class="alert alert-bl"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-  <div><strong>Upload CSV files</strong> with vehicle listings, dealer purchase history, or dealer master data. Headers must match the column names in the data mapping.</div></div>
+  <div><strong>Upload Excel or CSV files</strong> with vehicle listings, dealer purchase history, or dealer master data. Headers must match the column names in the data mapping.</div></div>
   <div class="two-col">
     <div class="card"><div class="card-hdr"><div><div class="card-t">Vehicle Listings</div><div class="card-st">Active inventory to match against dealers</div></div></div>
-    <div class="card-body"><div class="upload-zone" onclick="this.querySelector('input').click()"><input type="file" accept=".csv" onchange="uploadFile('vehicles',this.files[0])">
+    <div class="card-body"><div class="upload-zone" onclick="this.querySelector('input').click()"><input type="file" accept=".xlsx,.xls,.csv" onchange="uploadFile('vehicles',this.files[0])">
     <div class="upload-icon"><svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg></div>
-    <div class="upload-t">Drop CSV here or click</div><div class="upload-h">vehicle_id, make, model, body_type, price, year, mileage_km, fuel_type, postal_code</div></div></div></div>
+    <div class="upload-t">Drop Excel/CSV here or click</div><div class="upload-h">vehicle_id, make, model, body_type, price, year, mileage_km, fuel_type, postal_code</div></div></div></div>
 
     <div class="card"><div class="card-hdr"><div><div class="card-t">Purchase History</div><div class="card-st">Dealer past buying data (last 12+ months)</div></div></div>
-    <div class="card-body"><div class="upload-zone" onclick="this.querySelector('input').click()"><input type="file" accept=".csv" onchange="uploadFile('purchases',this.files[0])">
+    <div class="card-body"><div class="upload-zone" onclick="this.querySelector('input').click()"><input type="file" accept=".xlsx,.xls,.csv" onchange="uploadFile('purchases',this.files[0])">
     <div class="upload-icon"><svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg></div>
-    <div class="upload-t">Drop CSV here or click</div><div class="upload-h">transaction_id, dealer_id, purchased_make, purchased_model, purchased_body_type, purchase_price, purchased_at</div></div></div></div>
+    <div class="upload-t">Drop Excel/CSV here or click</div><div class="upload-h">transaction_id, dealer_id, purchased_make, purchased_model, purchased_body_type, purchase_price, purchased_at</div></div></div></div>
   </div>
   <div class="card"><div class="card-hdr"><div><div class="card-t">Dealer Master Data</div><div class="card-st">Dealer profiles (only needed once, or when adding new dealers)</div></div></div>
-  <div class="card-body"><div class="upload-zone" onclick="this.querySelector('input').click()" style="max-width:500px"><input type="file" accept=".csv" onchange="uploadFile('dealers',this.files[0])">
+  <div class="card-body"><div class="upload-zone" onclick="this.querySelector('input').click()" style="max-width:500px"><input type="file" accept=".xlsx,.xls,.csv" onchange="uploadFile('dealers',this.files[0])">
   <div class="upload-icon"><svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg></div>
-  <div class="upload-t">Drop CSV here or click</div><div class="upload-h">dealer_id, company_name, postal_code, email, phone, specialization</div></div></div></div>`;
+  <div class="upload-t">Drop Excel/CSV here or click</div><div class="upload-h">dealer_id, company_name, postal_code, email, phone, specialization</div></div></div></div>`;
   document.getElementById('pageContent').innerHTML = html;
 }
 
@@ -837,18 +837,16 @@ async function bulkOnboard(file) {
 }
 
 async function exportCredentials() {
-  const { dealers } = await fetchJson('/api/admin/dealer-management/export/credentials');
-  const appUrl = window.location.origin + '/app/';
-  let csv = 'dealer_id,company_name,email,phone,password,app_url\\n';
-  for (const d of dealers) {
-    csv += `${d.dealer_id},"${d.company_name}",${d.email||''},${d.phone||''},${d.dealer_password||'N/A'},${appUrl}\\n`;
-  }
-  const blob = new Blob([csv], { type: 'text/csv' });
+  const resp = await fetch('/api/admin/dealer-management/export/credentials', {
+    headers: authHeaders ? { 'Authorization': authHeaders.Authorization } : {}
+  });
+  if (!resp.ok) { toast('Export failed'); return; }
+  const blob = await resp.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = 'dealer_credentials.csv'; a.click();
+  a.href = url; a.download = 'CS24_Dealer_Credentials.xlsx'; a.click();
   URL.revokeObjectURL(url);
-  toast(`Exported ${dealers.length} dealer credentials`);
+  toast('Dealer credentials exported as Excel');
 }
 
 // =============================================

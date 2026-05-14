@@ -489,13 +489,36 @@ router.post('/dealer-management/onboard', upload.single('file'), (req, res) => {
 });
 
 router.get('/dealer-management/export/credentials', (req, res) => {
+  const XLSX = require('xlsx');
   const db = getDb();
   const dealers = db.prepare(`
-    SELECT dealer_id, company_name, email, phone, dealer_password, is_active, created_at
+    SELECT dealer_id, company_name, email, phone, postal_code, specialization, dealer_password, created_at
     FROM dealers WHERE is_active = 1 OR is_active IS NULL
     ORDER BY company_name
   `).all();
-  res.json({ dealers });
+
+  const appUrl = `${req.protocol}://${req.get('host')}/app/`;
+  const rows = dealers.map(d => ({
+    'Dealer ID': d.dealer_id,
+    'Company Name': d.company_name,
+    'Email': d.email || '',
+    'Phone': d.phone || '',
+    'Postal Code': d.postal_code || '',
+    'Specialization': d.specialization || '',
+    'Password': d.dealer_password || '',
+    'App URL': appUrl,
+    'Created': d.created_at || '',
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:12},{wch:30},{wch:28},{wch:18},{wch:12},{wch:28},{wch:14},{wch:40},{wch:20}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Dealer Credentials');
+  const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', 'attachment; filename="CS24_Dealer_Credentials.xlsx"');
+  res.send(buf);
 });
 
 module.exports = router;
